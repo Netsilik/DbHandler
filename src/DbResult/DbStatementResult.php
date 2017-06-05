@@ -1,0 +1,98 @@
+<?php
+namespace Netsilik\DbHandler\DbResult;
+
+/**
+ * @package DbHandler
+ * @copyright (c) 2011-2016 Netsilik (http://netsilik.nl)
+ * @license EUPL-1.1 (European Union Public Licence, v1.1)
+ */
+
+
+/**
+ * Result object, returned by the DbHandler whenever a valid query is executed
+ */
+final class DbStatementResult extends DbResult {
+	
+	/**
+	 * @var mysqli_stmt $_statement The MySQLi statement instance
+	 */
+	protected $_statement = null;
+	
+	/**
+	 * @var array $_result The bound record as fieldname => value pairs; modified by reference
+	 */
+	protected $_result = null;
+	
+	/**
+	 * @param MySQLi $statement Statement the statement for this result set
+	 * @param int $queryTime the time in seconds the statement took to execute
+	 * @return self
+	 */
+	public function __construct (\mysqli_stmt $statement, $queryTime) {
+		$this->_statement = $statement;
+		$this->_queryTime = $queryTime;
+		
+		if ( false !== ($metaData = $statement->result_metadata()) ) {
+			$statement->store_result();
+			while ($field = $metaData->fetch_field()) {
+				$params[] = &$this->_result[$field->name];
+			}
+			call_user_func_array(array($this->_statement, 'bind_result'), $params);
+			$metaData->close();
+		}
+	}
+	
+	/**
+	 * @inheritDoc
+	 */
+	public function fetch() {
+		if (is_null($this->_result)) { // No result data available
+			return false;
+		}
+		
+		$records = array();
+		while ($this->_statement->fetch()) {
+			foreach($this->_result as $name => $value) {
+				$column[$name] = $value;
+			}
+			$records[] = $column;
+		}
+		$this->_statement->data_seek(0);
+		return $records;
+	}
+	
+	/**
+	 * @inheritDoc
+	 */
+	public function getAffectedRecords() {
+		return $this->_statement->affected_rows;
+	}
+	
+	/**
+	 * @inheritDoc
+	 */
+	public function getFieldCount() {
+		return $this->_statement->field_count;
+	}
+	
+	/**
+	 * @inheritDoc
+	 */
+	public function getInsertedId() {
+		return $this->_statement->insert_id;
+	}
+	
+	/**
+	 * @inheritDoc
+	 */
+	public function getRecordCount() {
+		return $this->_statement->num_rows;
+	}
+	
+	/**
+	 * Destructor
+	 */
+	public function __destruct () {
+		$this->_statement->close();
+	}
+}

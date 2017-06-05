@@ -3,7 +3,7 @@
     "description": "PHP wrapper around the MySQLi Database Extensions, providing intuitive access to prepared queries.",
     "keywords": ["database", "mysql", "mariadb", "mysqli"],
     "type": "library",
-    "license": "All Rights Reserved",
+    "license": "proprietary",
 	"homepage": "https://gitlab.com/Netsilik/DbHandler",
     "authors": [
         {

@@ -7,37 +7,32 @@ namespace Netsilik\DbHandler\DbResult;
  * @license EUPL-1.1 (European Union Public Licence, v1.1)
  */
 
-
-
 use mysqli_result;
 
 /**
  * Result object, returned by the DbHandler whenever a valid query is executed
  */
-final class DbRawResult extends DbResult {
+class DbRawResult extends DbResult
+{
 
-	/**
-	 * @var callable $_result The result object instance
-	 */
-	protected $_result = null;
-	
 	protected $_records = null;
 	
 	/**
 	 * @param object $result Either an instance of mysqli_result or an instance of StdClass
 	 * @param int $queryTime the time in seconds the statement took to execute
-	 * @return self
 	 */
-	public function __construct ($result, $queryTime) {
+	public function __construct ($result, $queryTime)
+	{
 		$this->_result = $result;
 		
 		$this->_queryTime = $queryTime;
 	}
 	
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
-	public function fetch() {
+	public function fetch()
+	{
 		if ($this->_result instanceof mysqli_result) {
 			if (null === $this->_records) {
 				$this->_records = array();
@@ -53,9 +48,10 @@ final class DbRawResult extends DbResult {
 	}
 	
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
-	public function getAffectedRecords() {
+	public function getAffectedRecords()
+	{
 		if (isset($this->_result->affected_rows)) {
 			return $this->_result->affected_rows;
 		}
@@ -63,9 +59,10 @@ final class DbRawResult extends DbResult {
 	}
 	
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
-	public function getFieldCount() {
+	public function getFieldCount()
+	{
 		if (isset($this->_result->field_count)) {
 			return $this->_result->field_count;
 		}
@@ -73,9 +70,10 @@ final class DbRawResult extends DbResult {
 	}
 	
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
-	public function getInsertedId() {
+	public function getInsertedId()
+	{
 		if (isset($this->_result->insert_id)) {
 			return $this->_result->insert_id;
 		}
@@ -83,9 +81,10 @@ final class DbRawResult extends DbResult {
 	}
 	
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
-	public function getRecordCount() {
+	public function getRecordCount()
+	{
 		if (isset($this->_result->num_rows)) {
 			return $this->_result->num_rows;
 		}
@@ -95,7 +94,8 @@ final class DbRawResult extends DbResult {
 	/**
 	 * Destructor
 	 */
-	public function __destruct() {
+	public function __destruct()
+	{
 		if ($this->_result instanceof mysqli_result) {
 			$this->_result->free();
 		}

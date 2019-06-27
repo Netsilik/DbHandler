@@ -1,6 +1,8 @@
 <?php
 namespace Netsilik\DbHandler\DbResult;
 
+use mysqli_stmt;
+
 /**
  * @package DbHandler
  * @copyright (c) 2011-2016 Netsilik (http://netsilik.nl)
@@ -11,24 +13,20 @@ namespace Netsilik\DbHandler\DbResult;
 /**
  * Result object, returned by the DbHandler whenever a valid query is executed
  */
-final class DbStatementResult extends DbResult {
+class DbStatementResult extends DbResult
+{
 	
 	/**
-	 * @var mysqli_stmt $_statement The MySQLi statement instance
+	 * @var \mysqli_stmt $_statement The MySQLi statement instance
 	 */
 	protected $_statement = null;
 	
 	/**
-	 * @var array $_result The bound record as fieldname => value pairs; modified by reference
-	 */
-	protected $_result = null;
-	
-	/**
-	 * @param MySQLi $statement Statement the statement for this result set
+	 * @param \mysqli_stmt $statement Statement the statement for this result set
 	 * @param int $queryTime the time in seconds the statement took to execute
-	 * @return self
 	 */
-	public function __construct (\mysqli_stmt $statement, $queryTime) {
+	public function __construct (mysqli_stmt $statement, $queryTime)
+	{
 		$this->_statement = $statement;
 		$this->_queryTime = $queryTime;
 		
@@ -43,9 +41,10 @@ final class DbStatementResult extends DbResult {
 	}
 	
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
-	public function fetch() {
+	public function fetch()
+	{
 		if (is_null($this->_result)) { // No result data available
 			return false;
 		}
@@ -62,37 +61,42 @@ final class DbStatementResult extends DbResult {
 	}
 	
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
-	public function getAffectedRecords() {
+	public function getAffectedRecords()
+	{
 		return $this->_statement->affected_rows;
 	}
 	
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
-	public function getFieldCount() {
+	public function getFieldCount()
+	{
 		return $this->_statement->field_count;
 	}
 	
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
-	public function getInsertedId() {
+	public function getInsertedId()
+	{
 		return $this->_statement->insert_id;
 	}
 	
 	/**
-	 * @inheritDoc
+	 * {@inheritDoc}
 	 */
-	public function getRecordCount() {
+	public function getRecordCount()
+	{
 		return $this->_statement->num_rows;
 	}
 	
 	/**
 	 * Destructor
 	 */
-	public function __destruct () {
+	public function __destruct ()
+	{
 		$this->_statement->close();
 	}
 }

@@ -25,7 +25,7 @@ interface iDbResult {
 	/**
 	 * Fetch a field from a SELECT statement result
 	 * @param int $field name of the column of the first record to fetch
-	 * @return scalar the value of the specified field
+	 * @return mixed the value of the specified field
 	 */
 	public function fetchField($field = null, $recordNum = 0);
 	

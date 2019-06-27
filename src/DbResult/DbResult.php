@@ -20,9 +20,15 @@ abstract class DbResult implements iDbResult {
 	protected $_queryTime = 0;
 	
 	/**
+	 * @var array $_result The bound record as fieldname => value pairs; modified by reference
+	 */
+	protected $_result = null;
+	
+	/**
 	 * @inheritDoc
 	 */
-	public function fetchColumn($column = null) {
+	public function fetchColumn($column = null)
+	{
 		$records = $this->fetch();
 		$values = array();
 		foreach ($records as $record) {
@@ -40,7 +46,8 @@ abstract class DbResult implements iDbResult {
 	/**
 	 * @inheritDoc
 	 */
-	public function fetchField($field = null, $recordNum = 0) {
+	public function fetchField($field = null, $recordNum = 0)
+	{
 		$records = $this->fetch();
 		if (null === $field) {
 			return reset($records[$recordNum]);
@@ -51,7 +58,8 @@ abstract class DbResult implements iDbResult {
 	/**
 	 * @inheritDoc
 	 */
-	public function fetchRecord($recordNum = 0) {
+	public function fetchRecord($recordNum = 0)
+	{
 		$records = $this->fetch();
 		return isset($records[$recordNum]) ? $records[$recordNum] : array();	
 	}
@@ -60,7 +68,8 @@ abstract class DbResult implements iDbResult {
 	 * Get the query execution 
 	 * @return int time in seconds for this query
 	 */
-	public function getQueryTime() {
+	public function getQueryTime()
+	{
 		return number_format($this->_queryTime, 4);
 	}
 	
@@ -68,7 +77,8 @@ abstract class DbResult implements iDbResult {
 	 * Dump query result to std-out as an html table
 	 * @return void
 	 */
-	public function dump() {
+	public function dump()
+	{
 		echo "<div class=\"debug\">\n";
 		if (is_null($this->_result)) {
 			echo "<strong>Query OK, ".$this->getAffectedRecords()." rows affected (".$this->getQueryTime()." sec.)</strong>\n";
@@ -91,7 +101,7 @@ abstract class DbResult implements iDbResult {
 				
 				echo "\t<tr>\n";
 				foreach ($records[$i] as $field) {
-					echo "\t\t<td>";
+					echo "\t\t<td" . (is_numeric($field) ? ' align="right"': '') . '>';
 					echo (is_null($field)) ? '<em>NULL</em>' : htmlspecialchars($field, ENT_NOQUOTES);
 					echo "</td>\n";
 				}

@@ -241,6 +241,19 @@ final class DbHandler implements iDbHandler {
 	}
 	
 	/**
+	 * Escapes special characters in a string for use in an SQL statement, taking into account the current charset of the connection.
+	 *
+	 * @param string $value
+	 *
+	 * @return string
+	 */
+	public function escape(string $value) : string
+	{
+		return $this->_connection->escape_string($value);
+	}
+	
+	
+	/**
 	 * PHP >= 5.3 expects the parametrs passed to mysqli_stmt::bind_param to be references. However, we will do the binding after query execution
 	 * So, this functions quickly solves the issues by wrapping the arguments in an associative array.
 	 * @param $array

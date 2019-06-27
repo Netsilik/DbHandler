@@ -1,2 +1,4 @@
-/vendor
-/report
+/vendor/
+/report/
+/.idea/
+

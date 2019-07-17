@@ -12,7 +12,6 @@ use stdClass;
 use Exception;
 use mysqli_stmt;
 use InvalidArgumentException;
-use Netsilik\DbHandler\DbResult\AbstractDbResult;
 use Netsilik\DbHandler\DbResult\DbRawResult;
 use Netsilik\DbHandler\DbResult\DbStatementResult;
 
@@ -109,9 +108,10 @@ class DbHandler implements iDbHandler
 	/**
 	 * Connect to the Database Server
 	 *
+	 * @return iDbHandler $this
 	 * @throws \Exception
 	 */
-	public function connect()
+	public function connect() : iDbHandler
 	{
 		$this->_connection = mysqli_init(); // Create MySQLi instance
 		if (!($this->_connection instanceof mysqli)) {
@@ -131,9 +131,9 @@ class DbHandler implements iDbHandler
 		$this->_connection->options(MYSQLI_OPT_CONNECT_TIMEOUT, self::CONNECTION_TIMEOUT);
 		
 		// Open connection
-		if (!$this->_connection->real_connect($this->_host, $this->_userName, $this->_password) || null !== ($errorMsg = $this->_connection->connect_error)) {
+		if (!$this->_connection->real_connect($this->_host, $this->_userName, $this->_password) || null !== $this->_connection->connect_error) {
 			$this->_connection = null;
-			throw new Exception('Could not connect to DB-server: ' . $errorMsg);
+			throw new Exception('Could not connect to DB-server: ' . $this->_connection->connect_error);
 		}
 		
 		// Make sure the connection character set and collation matches our expectation
@@ -144,6 +144,8 @@ class DbHandler implements iDbHandler
 		if (null !== $this->_database) {
 			$this->selectDb($this->_database);
 		}
+		
+		return $this;
 	}
 	
 	/**
@@ -151,7 +153,7 @@ class DbHandler implements iDbHandler
 	 *
 	 * @return bool true on success, false on failure
 	 */
-	public function commit()
+	public function commit() : bool
 	{
 		if ( ! $this->_inTransaction) {
 			trigger_error('No transaction started', E_USER_NOTICE);
@@ -167,10 +169,10 @@ class DbHandler implements iDbHandler
 	/**
 	 * Get the information on the server and clients character set and collation settings
 	 *
-	 * @return AbstractDbResult A AbstractDbResult object holding the result of the executed query
+	 * @return DbStatementResult A AbstractDbResult object holding the result of the executed query
 	 * @throws \Exception
 	 */
-	public function getCharsetAndCollationInfo()
+	public function getCharsetAndCollationInfo() : DbStatementResult
 	{
 		return $this->query("SHOW VARIABLES WHERE Variable_name LIKE 'character\_set\_%' OR Variable_name LIKE 'collation%'");
 	}
@@ -182,41 +184,34 @@ class DbHandler implements iDbHandler
 	 */
 	public function isConnected() : bool
 	{
-		return (!is_null($this->_connection) && $this->_connection && $this->_ping());
+		if (!($this->_connection instanceof mysqli)) {
+			trigger_error('attempted to ping, but connection not initialized', E_USER_WARNING);
+			return false;
+		}
+		
+		return $this->_connection->ping();
 	}
 	
 	/**
-	 * Fetch connection resource for this db connection
-	 *
-	 * @return mysqli mysqli connection
+	 * @return mysqli Mysqli instance
 	 */
-	public function getConnection()
+	public function getConnection() : mysqli
 	{
 		return $this->_connection;
 	}
 	
-
 	/**
 	 * Close the connection
+	 *
+	 * @return void
 	 */
-	public function close()
+	public function close() : void
 	{
-		if ($this->_connection instanceof \mysqli) {
+		if ($this->_connection instanceof mysqli) {
 			$this->_connection->close();
 		}
+		
 		$this->_connection = null;
-	}
-
-	/**
-	 * @return bool
-	 */
-	private function _ping()
-	{
-		if (!($this->_connection instanceof \mysqli)) {
-			trigger_error('attempted to ping, but connection not initialized', E_USER_WARNING);
-			return false;
-		}
-		return $this->_connection->ping();
 	}
 	
 	/**
@@ -269,7 +264,7 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
-	 * Parse the query for parameter placeholders and, if appropriate, match them to the number of elemnts in the parameter
+	 * Parse the query for parameter placeholders and, if appropriate, match them to the number of elements in the parameter
 	 *
 	 * @param string $query The query string with indexed or named parameter placeholders
 	 * @param array $params The parameters in either an index or associative array
@@ -339,14 +334,14 @@ class DbHandler implements iDbHandler
 									}
 									
 									$param = array_shift($params);
-									$elmentCount = count($param);
+									$elementCount = count($param);
 									
 									array_push($parsedParams, ...$param);
 									
-									$parsedParams[0] .= str_repeat($query{$i + 1}, $elmentCount);
+									$parsedParams[0] .= str_repeat($query{$i + 1}, $elementCount);
 									
-									$query = substr_replace($query, implode(',', array_fill(0, $elmentCount, '?')), $i, 2);
-									$queryLength += $elmentCount * 2 - 3;
+									$query = substr_replace($query, implode(',', array_fill(0, $elementCount, '?')), $i, 2);
+									$queryLength += $elementCount * 2 - 3;
 									
 								} else {
 									$parsedParams[0] .= ($query{$i + 1} === 'f' ? 'd' : $query{$i + 1});
@@ -499,9 +494,10 @@ class DbHandler implements iDbHandler
 	/**
 	 * Re-establish the connection with the MySQL server if we are currently disconnected
 	 *
+	 * @return void
 	 * @throws \Exception
 	 */
-	private function _ensureConnected()
+	private function _ensureConnected() : void
 	{
 		if (!$this->isConnected()) {
 			trigger_error('Reconnecting to DB', E_USER_NOTICE);
@@ -511,7 +507,7 @@ class DbHandler implements iDbHandler
 	
 	
 	/**
-	 * PHP expects the parametrs passed to mysqli_stmt::bind_param to be references. However, we will do the binding after query execution
+	 * PHP expects the parameters passed to mysqli_stmt::bind_param to be references. However, we will do the binding after query execution
 	 * So, this functions quickly solves the issues by wrapping the arguments in an associative array.
 	 *
 	 * @param $array
@@ -535,7 +531,7 @@ class DbHandler implements iDbHandler
 	 *
 	 * @return bool true on success, false on failure
 	 */
-	public function rollback($silent = false)
+	public function rollback($silent = false) : bool
 	{
 		if (!$silent && !$this->_inTransaction) {
 			trigger_error('No transaction started', E_USER_NOTICE);
@@ -557,7 +553,7 @@ class DbHandler implements iDbHandler
 	 *
 	 * @return true on success, false otherwise
 	 */
-	public function selectDb(string $dbName)
+	public function selectDb(string $dbName) : bool
 	{
 		return $this->_connection->select_db($dbName);
 	}
@@ -597,7 +593,7 @@ class DbHandler implements iDbHandler
 	 *
 	 * @return bool true on success, false on failure
 	 */
-	public function startTransaction()
+	public function startTransaction() : bool
 	{
 		if ($this->_inTransaction) {
 			trigger_error('Implicit commit for previous transaction', E_USER_NOTICE);
@@ -615,9 +611,6 @@ class DbHandler implements iDbHandler
 	 */
 	public function __destruct()
 	{
-		if ($this->_connection !== null) {
-			$this->_connection->close();
-			$this->_connection = null;
-		}
+		$this->close();
 	}
 }

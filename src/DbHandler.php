@@ -254,8 +254,16 @@ class DbHandler implements iDbHandler
 		if ((strlen($params[0]) > 0 && false === call_user_func_array([$statement, 'bind_param'], $this->_referenceValues($params))) || $statement->errno > 0) {
 			throw new Exception('Parameter binding failed');
 		}
-
-		$executionTime = $this->_executePreparedStatement($statement);
+		
+		
+		$startTime = microtime(true);
+		
+		if (!$this->_executePreparedStatement($statement, $failRetryCount)) {
+			throw new Exception('Query failed: ' . $statement->error);
+		}
+		
+		$executionTime = microtime(true) - $startTime;
+		
 		
 		return new DbStatementResult($statement, $executionTime);
 	}
@@ -363,26 +371,58 @@ class DbHandler implements iDbHandler
 	
 	/**
 	 * @param \mysqli_stmt $statement
+	 * @param int          $failRetryCount
 	 *
-	 * @param array        $params
-	 *
-	 * @return float
+	 * @return bool True on success, false otherwise
 	 * @throws \Exception
 	 */
-	private function _executePreparedStatement(mysqli_stmt $statement) : float
+	private function _executePreparedStatement(mysqli_stmt $statement, int $failRetryCount) : bool
 	{
+		$success = $statement->execute();
 		
-		$startTime = microtime(true);
-		
-		$statement->execute();
-		
-		$executionTime = microtime(true) - $startTime;
-		
-		if ($statement->errno > 0) {
-			throw new Exception('Query failed: ' . $statement->error);
+		if (!$success || $statement->errno > 0) {
+			if ($failRetryCount > 0 && $this->_errorNoIsRetryable($statement->errno)) {
+				if ($this->_errorNoIsRetryableAfterSleep($statement->errno)) {
+					usleep(random_int(100000, 400000)); // sleep 0.1 - 0.4 seconds
+				}
+				
+				return $this->_executePreparedStatement($statement, $failRetryCount - 1); // Note: recursion
+			}
+			
+			return false;
 		}
 		
-		return $executionTime;
+		return true;
+	}
+	
+	/**
+	 * @param int $errorno
+	 *
+	 * @return bool
+	 */
+	private function _errorNoIsRetryable(int $errorno) : bool
+	{
+		return ($this->_errorNoIsRetryableAfterSleep($errorno) || $this->_errorNoIsRetryableImmediately($errorno));
+	}
+	
+	/**
+	 * @param int $errorno
+	 *
+	 * @return bool
+	 */
+	private function _errorNoIsRetryableAfterSleep(int $errorno) : bool
+	{
+		return in_array($errorno, self::RETRY_WITH_DELAY_ERROR_CODES);
+	}
+	
+	/**
+	 * @param int $errorno
+	 *
+	 * @return bool
+	 */
+	private function _errorNoIsRetryableImmediately(int $errorno) : bool
+	{
+		return in_array($errorno, self::RETRY_IMMEDIATELY_ERROR_CODES);
 	}
 	
 	/**

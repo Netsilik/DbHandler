@@ -116,15 +116,7 @@ class DbHandler implements iDbHandler {
 	 */
 	public function query(string $query, array $params = []) : DbStatementResult
 	{
-		d([
-			'query' => $query,
-			'params' => $params,
-		]);
 		list($query, $params) = $this->_parse(trim($query), $params);
-		d([
-			'query' => $query,
-			'params' => $params,
-		]);
 		
 		if (strlen($params[0]) <> count($params) - 1) {
 			throw new InvalidArgumentException((count($params) - 1).' parameters specified, '.strlen($params[0]).' expected');
@@ -184,14 +176,12 @@ class DbHandler implements iDbHandler {
 	private function _parse($query, $params)
 	{
 		$s = $d = false; // quoted string quote type
-		$n = 0; // parameter index
 		$queryLength = strlen($query);
 		
 		$usesIndexedParameters = false;
 		$usedNamedParameters = false;
 		
-		$parsedParams = [];
-		$tokenString = '';
+		$parsedParams = ['']; // first element is the token string
 		for ($i = 0; $i < $queryLength; $i++) {
 			switch( $query{ $i } ) {
 				case '\\':
@@ -205,9 +195,8 @@ class DbHandler implements iDbHandler {
 					break;
 				case '%':
 					if (!$s && !$d && $i+1 < $queryLength) {
-						if (false !== strpos('ifsb', $query{$i+1})) {
-
-							if ($i+2 < $queryLength && $query{$i+2} === ':') { // found named parameter indicator
+						if (false !== strpos('ifsb', $query{$i+1})) { // look ahead: can we find a valid parameter type indicator
+							if ($i+2 < $queryLength && $query{$i+2} === ':') { // look ahead: can we find the named parameter indicator
 								if ($usesIndexedParameters) {
 									throw new InvalidArgumentException('Mixed indexed and named parameters not supported, please use one or the other'); // TODO: is InvalidArgumentException the correct exception type?
 								}
@@ -221,15 +210,16 @@ class DbHandler implements iDbHandler {
 								if (!isset($params[ $paramName ])) {
 									throw new InvalidArgumentException('Named parameter '.$paramName.' not found'); // TODO: is InvalidArgumentException the correct exception type?
 								}
+								if (is_array($params[ $paramName ])) {
+									throw new InvalidArgumentException('Array parameter expansion is not supported for named parameters'); // TODO: is InvalidArgumentException the correct exception type?
+								}
 								
-								$tokenString .= ($query{$i+1} === 'f' ? 'd' : $query{$i+1});
-								$query = substr_replace($query, '?', $i, 3 + strlen($paramName));
-								$queryLength -= 2 + strlen($paramName);
-								$n++;
-								
+								$parsedParams[0] .= ($query{$i+1} === 'f' ? 'd' : $query{$i+1});
 								$parsedParams[] = $params[ $paramName ];
 								
-							} else {
+								$query = substr_replace($query, '?', $i, 3 + strlen($paramName));
+								$queryLength -= 2 + strlen($paramName);
+							} else { // This is a non-named parameter
 								if ($usedNamedParameters) {
 									throw new InvalidArgumentException('Mixed named and indexed parameters not supported, please use one or the other');
 								}
@@ -239,25 +229,28 @@ class DbHandler implements iDbHandler {
 								
 								$usesIndexedParameters = true;
 								
-							//	if (is_array($params[$n])) {
-							//
-							//		TODO: re-enable the expand array functionality
-							//
-							//		$elmentCount = count($params[$n]);
-							//		array_splice($params, $n, 1, $params[$n]);
-							//		$tokenString .= str_repeat($query{$i+1}, $elmentCount);
-							//		$query = substr_replace($query, implode(',', array_fill(0, $elmentCount, '?')), $i, 2);
-							//		$queryLength += $elmentCount * 2 - 3;
-							//		$n += $elmentCount;
-							//	} else {
-									$tokenString .= ($query{$i+1} === 'f' ? 'd' : $query{$i+1});
+								if (is_array($params[0])) {
+									if (1 !== preg_match('/(ALL|ANY|IN|SOME)\s*\(\s*$/i', substr($query, 0, $i))) { // look behind: are we in an IN clause?
+										throw new InvalidArgumentException('Array parameter expansion is only supported in the ALL, ANY, IN and SOME operators syntax'); // TODO: is InvalidArgumentException the correct exception type?
+									}
+									
+									$param = array_shift($params);
+									$elmentCount = count($param);
+									
+									array_push($parsedParams, ...$param);
+									
+									$parsedParams[0] .= str_repeat($query{$i+1}, $elmentCount);
+									
+									$query = substr_replace($query, implode(',', array_fill(0, $elmentCount, '?')), $i, 2);
+									$queryLength += $elmentCount * 2 - 3;
+									
+								} else {
+									$parsedParams[0] .= ($query{$i+1} === 'f' ? 'd' : $query{$i+1});
 									$query = substr_replace($query, '?', $i, 2);
 									$queryLength--;
-									$n++;
 									
 									$parsedParams[] = array_shift($params);
-									
-							//	}
+								}
 							
 							}
 							
@@ -267,9 +260,6 @@ class DbHandler implements iDbHandler {
 				// case: check for the various comment start chars (not implemented yet)
 			}
 		}
-		
-		
-		array_unshift($parsedParams, $tokenString);
 		
 		return [
 			$query,

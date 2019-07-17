@@ -12,7 +12,7 @@ use mysqli_result;
 /**
  * Result object, returned by the DbHandler whenever a valid query is executed
  */
-class DbRawResult extends DbResult
+class DbRawResult extends AbstractDbResult
 {
 
 	protected $_records = null;

@@ -13,7 +13,7 @@ use mysqli_stmt;
 /**
  * Result object, returned by the DbHandler whenever a valid query is executed
  */
-class DbStatementResult extends DbResult
+class DbStatementResult extends AbstractDbResult
 {
 	
 	/**

@@ -12,7 +12,7 @@ use stdClass;
 use Exception;
 use mysqli_stmt;
 use InvalidArgumentException;
-use Netsilik\DbHandler\DbResult\DbResult;
+use Netsilik\DbHandler\DbResult\AbstractDbResult;
 use Netsilik\DbHandler\DbResult\DbRawResult;
 use Netsilik\DbHandler\DbResult\DbStatementResult;
 
@@ -22,6 +22,10 @@ use Netsilik\DbHandler\DbResult\DbStatementResult;
  */
 class DbHandler implements iDbHandler
 {
+	/**
+	 * Connect timeout in seconds
+	 */
+	const CONNECTION_TIMEOUT = 10;
 	
 	/**
 	 * The name of the default connection charset (4 byte UTF-8)
@@ -34,6 +38,22 @@ class DbHandler implements iDbHandler
 	const CONNECTION_COLLATION = 'utf8mb4_unicode_ci';
 	
 	/**
+	 * Retry MySQL queries immediately, for error codes in this list
+	 */
+	const RETRY_IMMEDIATELY_ERROR_CODES = [
+		2006, // 'MySQL server has gone away'
+		2013, // 'Lost connection to MySQL server during query'
+	];
+	
+	/**
+	 * Retry MySQL queries with delay, for error codes in this list
+	 */
+	const RETRY_WITH_DELAY_ERROR_CODES = [
+		1205, // 'Lock wait timeout exceeded'
+		1213, // 'Deadlock found when trying to get lock'
+	];
+	
+	/**
 	 * @var mysqli $_connection
 	 */
 	protected $_connection;
@@ -41,26 +61,79 @@ class DbHandler implements iDbHandler
 	/**
 	 * @var bool $_inTransaction
 	 */
-	protected $_inTransaction;
+	protected $_inTransaction = false;
+	
+	/**
+	 * @var string $_password
+	 */
+	private $_password;
+	
+	/**
+	 * @var string $_userName
+	 */
+	private $_userName;
+	
+	/**
+	 * @var string $_database
+	 */
+	private $_database;
+	
+	/**
+	 * @var string $_host
+	 */
+	private $_host;
+	
+	/**
+	 * @var string $_caCertFile
+	 */
+	private $_caCertFile;
 	
 	/**
 	 * Constructor
 	 *
-	 * @param string $dbHost Either a host name or the IP address for the MySQL database server
-	 * @param string $dbUser The MySQL user name
-	 * @param string $dbPass The MySQL password for this user
-	 * @param string|null $dbName The optional name of the database to select
+	 * @param string      $host
+	 * @param string      $database
+	 * @param string      $userName
+	 * @param string      $password
+	 * @param string|null $caCertFile
+	 */
+	public function __construct(string $host, string $userName, string $password, string $database = null, string $caCertFile = null)
+	{
+		$this->_host       = $host;
+		$this->_userName   = $userName;
+		$this->_password   = $password;
+		$this->_database   = $database;
+		$this->_caCertFile = $caCertFile;
+	}
+	
+	/**
+	 * Connect to the Database Server
 	 *
 	 * @throws \Exception
 	 */
-	public function __construct ($dbHost, $dbUser, $dbPass, $dbName = null)
+	public function connect()
 	{
-		$this->_connection = new mysqli($dbHost, $dbUser, $dbPass);
-		$this->_inTransaction = false;
-	 
-		if ( null !== ($errorMsg = $this->_connection->connect_error) ) {
+		$this->_connection = mysqli_init(); // Create MySQLi instance
+		if (!($this->_connection instanceof mysqli)) {
+			throw new Exception('Could not initialize MySQLi instance');
+		}
+		
+		if (null !== $this->_caCertFile) {
+			// Make sure the CA certificate file is available so that we can setup an encrypted connection
+			if (false === ($caCertFile = realpath($this->_caCertFile))) {
+				throw new Exception('CA-Certificate file could not be found');
+			}
+			
+			$this->_connection->ssl_set(null, null, $caCertFile, null, null);
+		}
+		
+		// Set connect timeout
+		$this->_connection->options(MYSQLI_OPT_CONNECT_TIMEOUT, self::CONNECTION_TIMEOUT);
+		
+		// Open connection
+		if (!$this->_connection->real_connect($this->_host, $this->_userName, $this->_password) || null !== ($errorMsg = $this->_connection->connect_error)) {
 			$this->_connection = null;
-			throw new Exception('Could not connect to DB-server: '.$errorMsg);
+			throw new Exception('Could not connect to DB-server: ' . $errorMsg);
 		}
 		
 		// Make sure the connection character set and collation matches our expectation
@@ -68,8 +141,8 @@ class DbHandler implements iDbHandler
 		$this->setConnectionCollation(self::CONNECTION_COLLATION);
 		
 		// Select specified database (if any)
-		if ( $dbName !== null) {
-			$this->selectDb( $dbName );
+		if (null !== $this->_database) {
+			$this->selectDb($this->_database);
 		}
 	}
 	
@@ -92,58 +165,24 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
-	 * Execute a prepared query
-	 *
-	 * @param string $query The query with zero or more parameter marker characters at the appropriate positions.
-	 *                      Parameter markers are defined as a literal % followed by either
-	 *                      i : corresponding variable will be interpreted as an integer
-	 *                      f : corresponding variable will be interpreted as a float
-	 *                      s : corresponding variable will be interpreted as a string
-	 *                      b : corresponding variable will be interpreted as a blob and should be sent in packets (but this is not yet supported
-	 *                      by MySQL)
-	 * @param array $params An optional array, with values matching the parameter markers in $query
-	 *
-	 * @return \Netsilik\DbHandler\DbResult\DbStatementResult object holding the result of the executed query
-	 * @throws \Exception
-	 * @throws \InvalidArgumentException
-	 */
-	public function query(string $query, array $params = []) : DbStatementResult
-	{
-		list($query, $params) = $this->_preParse(trim($query), $params);
-		
-		if (strlen($params[0]) <> count($params) - 1) {
-			throw new InvalidArgumentException((count($params) - 1) . ' parameters specified, ' . strlen($params[0]) . ' expected');
-		}
-		
-		$statement = $this->_connection->prepare($query);
-		if (!($statement instanceof mysqli_stmt) || $statement->errno > 0) {
-			throw new Exception('Query preparation failed: ' . $this->_connection->error);
-		}
-		
-		$startTime = microtime(true);
-		if ((strlen($params[0]) > 0 && !call_user_func_array([$statement, 'bind_param'], $this->_referenceValues($params))) || $statement->errno > 0) {
-			throw new Exception('Parameter binding failed');
-		}
-		
-		$statement->execute();
-		$queryTime = microtime(true) - $startTime;
-		
-		if ($statement->errno > 0) {
-			throw new Exception('Query failed: ' . $statement->error);
-		}
-		
-		return new DbStatementResult($statement, $queryTime);
-	}
-	
-	/**
 	 * Get the information on the server and clients character set and collation settings
-	 * 
-	 * @return DbResult A DbResult object holding the result of the executed query
+	 *
+	 * @return AbstractDbResult A AbstractDbResult object holding the result of the executed query
 	 * @throws \Exception
 	 */
 	public function getCharsetAndCollationInfo()
 	{
 		return $this->query("SHOW VARIABLES WHERE Variable_name LIKE 'character\_set\_%' OR Variable_name LIKE 'collation%'");
+	}
+	
+	/**
+	 * Check whether we have a open connection
+	 *
+	 * @return bool
+	 */
+	public function isConnected() : bool
+	{
+		return (!is_null($this->_connection) && $this->_connection && $this->_ping());
 	}
 	
 	/**
@@ -156,6 +195,71 @@ class DbHandler implements iDbHandler
 		return $this->_connection;
 	}
 	
+
+	/**
+	 * Close the connection
+	 */
+	public function close()
+	{
+		if ($this->_connection instanceof \mysqli) {
+			$this->_connection->close();
+		}
+		$this->_connection = null;
+	}
+
+	/**
+	 * @return bool
+	 */
+	private function _ping()
+	{
+		if (!($this->_connection instanceof \mysqli)) {
+			trigger_error('attempted to ping, but connection not initialized', E_USER_WARNING);
+			return false;
+		}
+		return $this->_connection->ping();
+	}
+	
+	/**
+	 * Execute a prepared query
+	 *
+	 * @param string $query        The query with zero or more parameter marker characters at the appropriate positions. Parameter markers are
+	 *                             defined as a literal % followed by either:
+	 *                             i : corresponding variable will be interpreted as an integer
+	 *                             f : corresponding variable will be interpreted as a float
+	 *                             s : corresponding variable will be interpreted as a string
+	 *                             b : corresponding variable will be interpreted as a blob and should be sent in packets (but this is not yet
+	 *                             supported by MySQL)
+	 * @param array $params        An optional array, with values matching the parameter markers in $query
+	 * @param int $failRetryCount The number of times failed queries should be retried, for recoverable error numbers
+	 *
+	 * @return \Netsilik\DbHandler\DbResult\DbStatementResult object holding the result of the executed query
+	 * @throws \Exception
+	 * @throws \InvalidArgumentException
+	 */
+	public function query(string $query, array $params = [], int $failRetryCount = 3) : DbStatementResult
+	{
+		list($query, $params) = $this->_preParse(trim($query), $params);
+		
+		if (strlen($params[0]) <> count($params) - 1) {
+			throw new InvalidArgumentException((count($params) - 1) . ' parameters specified, ' . strlen($params[0]) . ' expected');
+		}
+		
+		$this->_ensureConnected();
+		
+		$statement = $this->_connection->prepare($query);
+		if (!($statement instanceof mysqli_stmt) || $statement->errno > 0) {
+			throw new Exception('Query preparation failed: ' . $this->_connection->error);
+		}
+		
+		if ((strlen($params[0]) > 0 && false === call_user_func_array([$statement, 'bind_param'], $this->_referenceValues($params))) || $statement->errno > 0) {
+			throw new Exception('Parameter binding failed');
+		}
+
+		$executionTime = $this->_executePreparedStatement($statement);
+		
+		return new DbStatementResult($statement, $executionTime);
+	}
+	
 	/**
 	 * Parse the query for parameter placeholders and, if appropriate, match them to the number of elemnts in the parameter
 	 *
@@ -163,6 +267,7 @@ class DbHandler implements iDbHandler
 	 * @param array $params The parameters in either an index or associative array
 	 *
 	 * @return array An indexed array with two elements, the first element is the query, the second element an indexed array with token string and the parameter values
+	 * @throws \InvalidArgumentException
 	 */
 	private function _preParse(string $query, array $params) : array
 	{
@@ -257,15 +362,42 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
+	 * @param \mysqli_stmt $statement
+	 *
+	 * @param array        $params
+	 *
+	 * @return float
+	 * @throws \Exception
+	 */
+	private function _executePreparedStatement(mysqli_stmt $statement) : float
+	{
+		
+		$startTime = microtime(true);
+		
+		$statement->execute();
+		
+		$executionTime = microtime(true) - $startTime;
+		
+		if ($statement->errno > 0) {
+			throw new Exception('Query failed: ' . $statement->error);
+		}
+		
+		return $executionTime;
+	}
+	
+	/**
 	 * Execute a query, as is. Please pay attention to escaping any user provides values
 	 *
 	 * @param string $query The query to execute
 	 * @param bool $multiple Indicate if the $query string contains multiple queries that should be executed
 	 *
 	 * @return \Netsilik\DbHandler\DbResult\DbRawResult|array A DbRawResult for a single query, an indexed array of DbRawResults if the $multiple parameter was true
+	 * @throws \Exception
 	 */
 	public function rawQuery(string $query, bool $multiple = false)
 	{
+		$this->_ensureConnected();
+		
 		if ($multiple) {
 			
 			$startTime = microtime(true);
@@ -315,10 +447,26 @@ class DbHandler implements iDbHandler
 	 * @param string $value
 	 *
 	 * @return string
+	 * @throws \Exception
 	 */
 	public function escape(string $value) : string
 	{
+		$this->_ensureConnected();
+		
 		return $this->_connection->escape_string($value);
+	}
+	
+	/**
+	 * Re-establish the connection with the MySQL server if we are currently disconnected
+	 *
+	 * @throws \Exception
+	 */
+	private function _ensureConnected()
+	{
+		if (!$this->isConnected()) {
+			trigger_error('Reconnecting to DB', E_USER_NOTICE);
+			$this->connect();
+		}
 	}
 	
 	
@@ -369,7 +517,7 @@ class DbHandler implements iDbHandler
 	 *
 	 * @return true on success, false otherwise
 	 */
-	public function selectDb($dbName)
+	public function selectDb(string $dbName)
 	{
 		return $this->_connection->select_db($dbName);
 	}

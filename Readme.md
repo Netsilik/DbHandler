@@ -28,13 +28,13 @@ Usage
 -----
 
 ```php
-use Scepino\DbHandler\DbHandler;
+use Netsilik\DbHandler;
 
-$dbHandler = new DbHandler('localhost', 'root', 'tB1PAYi6', 'test');
+$dbHandler = new DbHandler('localhost', 'user', 'password', 'test');
 
 
-$result = $dbHandler->query("INSERT INTO tests VALUES (null, 'foo')");
-$result = $dbHandler->query("SELECT * FROM tests LIMIT 3");
+$result = $dbHandler->query("INSERT INTO tests VALUES (null, %s)", 'foo');
+$result = $dbHandler->query("SELECT * FROM tests ORDER BY id DESC LIMIT 3");
 var_dump( $result->getInsertedId() );
 var_dump( $result->getAffectedRecords() );
 var_dump( $result->getFieldCount() );
@@ -45,7 +45,7 @@ $result->dump();
 echo '<hr>';
 
 $result = $dbHandler->rawQuery("INSERT INTO tests VALUES (null, 'foo')");
-$result = $dbHandler->rawQuery("SELECT * FROM tests LIMIT 3");
+$result = $dbHandler->query("SELECT * FROM tests ORDER BY id DESC LIMIT 3");
 var_dump( $result->getInsertedId() );
 var_dump( $result->getAffectedRecords() );
 var_dump( $result->getFieldCount() );

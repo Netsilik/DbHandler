@@ -114,11 +114,17 @@ class DbHandler implements iDbHandler {
 	 * @throws \Exception
 	 * @throws \InvalidArgumentException
 	 */
-	public function query($query) : DbStatementResult
+	public function query(string $query, array $params = []) : DbStatementResult
 	{
-		$query = trim($query);
-        $params = array_slice(func_get_args(), 1);
-		array_unshift($params, $this->_parse($query, $params));
+		d([
+			'query' => $query,
+			'params' => $params,
+		]);
+		list($query, $params) = $this->_parse(trim($query), $params);
+		d([
+			'query' => $query,
+			'params' => $params,
+		]);
 		
 		if (strlen($params[0]) <> count($params) - 1) {
 			throw new InvalidArgumentException((count($params) - 1).' parameters specified, '.strlen($params[0]).' expected');
@@ -171,16 +177,21 @@ class DbHandler implements iDbHandler {
 	 * @param array &$params a reference to the array with 
 	 
 	 *
-	 * @return string all tokens found by the parser
+	 * @return array all tokens found by the parser
 	 * @throws \Exception
 	 * @throws \InvalidArgumentException
 	 */
-	private function _parse(&$query, &$params)
+	private function _parse($query, $params)
 	{
 		$s = $d = false; // quoted string quote type
 		$n = 0; // parameter index
-		$tokenString = '';
 		$queryLength = strlen($query);
+		
+		$usesIndexedParameters = false;
+		$usedNamedParameters = false;
+		
+		$parsedParams = [];
+		$tokenString = '';
 		for ($i = 0; $i < $queryLength; $i++) {
 			switch( $query{ $i } ) {
 				case '\\':
@@ -194,30 +205,76 @@ class DbHandler implements iDbHandler {
 					break;
 				case '%':
 					if (!$s && !$d && $i+1 < $queryLength) {
-						if ('i' === $query{$i+1} || 'd' === $query{$i+1} || 's' === $query{$i+1} || 'b' === $query{$i+1}) {
-							if ($n >= count($params)) {
-								throw new InvalidArgumentException('The number of parameters is not equal to the number of placeholders');
-							}
-							if (is_array($params[$n])) {
-								$elmentCount = count($params[$n]);
-								array_splice($params, $n, 1, $params[$n]);
-								$tokenString .= str_repeat($query{$i+1}, $elmentCount);							
-								$query = substr_replace($query, implode(',', array_fill(0, $elmentCount, '?')), $i, 2);
-								$queryLength += $elmentCount * 2 - 3;
-								$n += $elmentCount;
-							} else {
-								$tokenString .= $query{$i+1};
-								$query = substr_replace($query, '?', $i, 2);
-								$queryLength--;
+						if (false !== strpos('ifsb', $query{$i+1})) {
+
+							if ($i+2 < $queryLength && $query{$i+2} === ':') { // found named parameter indicator
+								if ($usesIndexedParameters) {
+									throw new InvalidArgumentException('Mixed indexed and named parameters not supported, please use one or the other'); // TODO: is InvalidArgumentException the correct exception type?
+								}
+								$usedNamedParameters = true;
+								
+								$paramName = '';
+								for ($j = $i + 3; false !== stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query{$j}); $j++) {
+									$paramName .= $query{$j};
+								}
+								
+								if (!isset($params[ $paramName ])) {
+									throw new InvalidArgumentException('Named parameter '.$paramName.' not found'); // TODO: is InvalidArgumentException the correct exception type?
+								}
+								
+								$tokenString .= ($query{$i+1} === 'f' ? 'd' : $query{$i+1});
+								$query = substr_replace($query, '?', $i, 3 + strlen($paramName));
+								$queryLength -= 2 + strlen($paramName);
 								$n++;
+								
+								$parsedParams[] = $params[ $paramName ];
+								
+							} else {
+								if ($usedNamedParameters) {
+									throw new InvalidArgumentException('Mixed named and indexed parameters not supported, please use one or the other');
+								}
+								if (count($params) === 0) {
+									throw new InvalidArgumentException('The number of parameters is not equal to the number of placeholders'); // TODO: is InvalidArgumentException the correct exception type?
+								}
+								
+								$usesIndexedParameters = true;
+								
+							//	if (is_array($params[$n])) {
+							//
+							//		TODO: re-enable the expand array functionality
+							//
+							//		$elmentCount = count($params[$n]);
+							//		array_splice($params, $n, 1, $params[$n]);
+							//		$tokenString .= str_repeat($query{$i+1}, $elmentCount);
+							//		$query = substr_replace($query, implode(',', array_fill(0, $elmentCount, '?')), $i, 2);
+							//		$queryLength += $elmentCount * 2 - 3;
+							//		$n += $elmentCount;
+							//	} else {
+									$tokenString .= ($query{$i+1} === 'f' ? 'd' : $query{$i+1});
+									$query = substr_replace($query, '?', $i, 2);
+									$queryLength--;
+									$n++;
+									
+									$parsedParams[] = array_shift($params);
+									
+							//	}
+							
 							}
+							
 						}
 					}
 					break;
 				// case: check for the various comment start chars (not implemented yet)
 			}
 		}
-		return $tokenString;
+		
+		
+		array_unshift($parsedParams, $tokenString);
+		
+		return [
+			$query,
+			$parsedParams,
+		];
 	}
 	
 	/**
@@ -349,7 +406,7 @@ class DbHandler implements iDbHandler {
 	 */
 	public function setConnectionCollation($collation)
 	{
-		$this->query('SET collation_connection = %s', $collation);
+		$this->query('SET collation_connection = %s', [$collation]);
 	}
 	
 	/**

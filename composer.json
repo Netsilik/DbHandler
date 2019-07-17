@@ -17,6 +17,7 @@
         "ext-mysqli": "*"
     },
     "require-dev": {
+        "netsilik/d": "^1.0",
         "phpunit/phpunit": "5.4.*"
     },
     "autoload": {

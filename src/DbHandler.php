@@ -426,40 +426,12 @@ class DbHandler implements iDbHandler
 	 * @param string $query The query to execute
 	 * @param bool $multiple Indicate if the $query string contains multiple queries that should be executed
 	 *
-	 * @return \Netsilik\DbHandler\DbResult\DbRawResult|array A DbRawResult for a single query, an indexed array of DbRawResults if the $multiple parameter was true
+	 * @return \Netsilik\DbHandler\DbResult\DbRawResult A DbRawResult
 	 * @throws \Exception
 	 */
-	public function rawQuery(string $query, bool $multiple = false)
+	public function rawQuery(string $query)
 	{
 		$this->_ensureConnected();
-		
-		if ($multiple) {
-			
-			$startTime = microtime(true);
-			if ( ! $this->_connection->multi_query($query)) {
-				trigger_error('query failed: '.$this->_connection->error.' ('.$this->_connection->errno.')', E_USER_ERROR);
-			}
-			$queryTime = microtime(true) - $startTime;
-			
-			$n = 0;
-			$records = array();
-			do {
-				if ($this->_connection->errno > 0) {
-					trigger_error('query '.$n.' failed: '.$this->_connection->error.' ('.$this->_connection->errno.')', E_USER_ERROR);
-				}
-				
-				if ( false === ($result = $this->_connection->store_result()) ) {
-					$result = new stdClass();
-					$result->insert_id = $this->_connection->insert_id;
-					$result->affected_rows = $this->_connection->affected_rows;
-				}
-				$records[$n] = new DbRawResult($result, $queryTime);
-				
-				$n++;
-			} while ( $this->_connection->more_results() && $this->_connection->next_result() );
-			
-			return $records;
-		}
 		
 		$startTime = microtime(true);
 		if ( false === ($result = $this->_connection->query($query)) ) {

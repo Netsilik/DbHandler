@@ -8,5 +8,6 @@ namespace Netsilik\DbHandler;
  */
 
 interface iDbHandler {
-	public function query($query);
+	
+	public function query(string $query, array $params = []);
 }

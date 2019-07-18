@@ -12,7 +12,7 @@ namespace Netsilik\DbHandler\DbResult;
 /**
  * Result object, returned by the DbHandler whenever a valid query is executed
  */
-abstract class DbResult implements iDbResult {
+abstract class AbstractDbResult implements iDbResult {
 		
 	/**
 	 * @var int $_queryTime The query time in mili seconds
@@ -65,8 +65,7 @@ abstract class DbResult implements iDbResult {
 	}
 	
 	/**
-	 * Get the query execution 
-	 * @return int time in seconds for this query
+	 * {@inheritDoc}
 	 */
 	public function getQueryTime()
 	{

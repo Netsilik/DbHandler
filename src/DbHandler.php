@@ -399,7 +399,7 @@ class DbHandler implements iDbHandler
 								$usedNamedParameters = true;
 								
 								$paramName = '';
-								for ($j = $i + 3; false !== stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query{$j}); $j++) {
+								for ($j = $i + 3; false !== stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query{$j}); $j++) { // TODO: check query length
 									$paramName .= $query{$j};
 								}
 								

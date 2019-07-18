@@ -106,10 +106,7 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
-	 * Connect to the Database Server
-	 *
-	 * @return iDbHandler $this
-	 * @throws \Exception
+	 * {@inheritDoc}
 	 */
 	public function connect() : iDbHandler
 	{
@@ -149,9 +146,7 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
-	 * Check whether we have a open connection
-	 *
-	 * @return bool
+	 * {@inheritDoc}
 	 */
 	public function isConnected() : bool
 	{
@@ -164,7 +159,7 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
-	 * @return mysqli Mysqli instance
+	 * {@inheritDoc}
 	 */
 	public function getConnection() : mysqli
 	{
@@ -213,11 +208,7 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
-	 * Select a database to use on current connection
-	 *
-	 * @param string $dbName name of the database to select
-	 *
-	 * @return true on success, false otherwise
+	 * {@inheritDoc}
 	 */
 	public function selectDb(string $dbName) : bool
 	{
@@ -225,21 +216,7 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
-	 * Execute a prepared query
-	 *
-	 * @param string $query        The query with zero or more parameter marker characters at the appropriate positions. Parameter markers are
-	 *                             defined as a literal % followed by either:
-	 *                             i : corresponding variable will be interpreted as an integer
-	 *                             f : corresponding variable will be interpreted as a float
-	 *                             s : corresponding variable will be interpreted as a string
-	 *                             b : corresponding variable will be interpreted as a blob and should be sent in packets (but this is not yet
-	 *                             supported by MySQL)
-	 * @param array $params        An optional array, with values matching the parameter markers in $query
-	 * @param int $failRetryCount The number of times failed queries should be retried, for recoverable error numbers
-	 *
-	 * @return \Netsilik\DbHandler\DbResult\DbStatementResult object holding the result of the executed query
-	 * @throws \Exception
-	 * @throws \InvalidArgumentException
+	 * {@inheritDoc}
 	 */
 	public function query(string $query, array $params = [], int $failRetryCount = 3) : DbStatementResult
 	{
@@ -274,13 +251,7 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
-	 * Execute a query, as is. Please pay attention to escaping any user provides values
-	 *
-	 * @param string $query The query to execute
-	 * @param bool $multiple Indicate if the $query string contains multiple queries that should be executed
-	 *
-	 * @return \Netsilik\DbHandler\DbResult\DbRawResult A DbRawResult
-	 * @throws \Exception
+	 * {@inheritDoc}
 	 */
 	public function rawQuery(string $query) : DbRawResult
 	{
@@ -302,12 +273,7 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
-	 * Escapes special characters in a string for use in an SQL statement, taking into account the current charset of the connection.
-	 *
-	 * @param string $value
-	 *
-	 * @return string
-	 * @throws \Exception
+	 * {@inheritDoc}
 	 */
 	public function escape(string $value) : string
 	{
@@ -317,9 +283,7 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
-	 * Start a transaction ('advanced' features such as WITH CONSISTENT SNAPSHOT are not supported)
-	 *
-	 * @return bool true on success, false on failure
+	 * {@inheritDoc}
 	 */
 	public function startTransaction() : bool
 	{
@@ -335,11 +299,7 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
-	 * Rollback a transaction
-	 *
-	 * @param bool $silent If false, a E_USER_NOTICE is emitted when no transaction has been started
-	 *
-	 * @return bool true on success, false on failure
+	 * {@inheritDoc}
 	 */
 	public function rollback($silent = false) : bool
 	{
@@ -357,9 +317,7 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
-	 * Commit a transaction
-	 *
-	 * @return bool true on success, false on failure
+	 * {@inheritDoc}
 	 */
 	public function commit() : bool
 	{
@@ -375,9 +333,7 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
-	 * Close the connection
-	 *
-	 * @return void
+	 * {@inheritDoc}
 	 */
 	public function close() : void
 	{

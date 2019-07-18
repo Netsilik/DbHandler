@@ -149,35 +149,6 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
-	 * Commit a transaction
-	 *
-	 * @return bool true on success, false on failure
-	 */
-	public function commit() : bool
-	{
-		if ( ! $this->_inTransaction) {
-			trigger_error('No transaction started', E_USER_NOTICE);
-			return false;
-		}
-		$this->_inTransaction = false;
-		
-		$result = $this->_connection->commit();
-		$this->_connection->autocommit(true);
-		return $result;
-	}
-	
-	/**
-	 * Get the information on the server and clients character set and collation settings
-	 *
-	 * @return DbStatementResult A AbstractDbResult object holding the result of the executed query
-	 * @throws \Exception
-	 */
-	public function getCharsetAndCollationInfo() : DbStatementResult
-	{
-		return $this->query("SHOW VARIABLES WHERE Variable_name LIKE 'character\_set\_%' OR Variable_name LIKE 'collation%'");
-	}
-	
-	/**
 	 * Check whether we have a open connection
 	 *
 	 * @return bool
@@ -201,17 +172,56 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
-	 * Close the connection
+	 * Set the character set for the connection
 	 *
-	 * @return void
+	 * @param string $characterSet The name of the character set to use
+	 *
+	 * @return iDbHandler $this
 	 */
-	public function close() : void
+	public function setConnectionCharSet($characterSet) : iDbHandler
 	{
-		if ($this->_connection instanceof mysqli) {
-			$this->_connection->close();
-		}
+		$this->_connection->set_charset($characterSet);
 		
-		$this->_connection = null;
+		return $this;
+	}
+	
+	/**
+	 * Set the collation for the connection
+	 *
+	 * @param string $collation The name of the collation to use
+	 *
+	 * @return iDbHandler $this
+	 *
+	 * @throws \Exception
+	 */
+	public function setConnectionCollation($collation) : iDbHandler
+	{
+		$this->query('SET collation_connection = %s', [$collation]);
+		
+		return $this;
+	}
+	
+	/**
+	 * Get the information on the server and clients character set and collation settings
+	 *
+	 * @return DbStatementResult A AbstractDbResult object holding the result of the executed query
+	 * @throws \Exception
+	 */
+	public function getCharsetAndCollationInfo() : DbStatementResult
+	{
+		return $this->query("SHOW VARIABLES WHERE Variable_name LIKE 'character\_set\_%' OR Variable_name LIKE 'collation%'");
+	}
+	
+	/**
+	 * Select a database to use on current connection
+	 *
+	 * @param string $dbName name of the database to select
+	 *
+	 * @return true on success, false otherwise
+	 */
+	public function selectDb(string $dbName) : bool
+	{
+		return $this->_connection->select_db($dbName);
 	}
 	
 	/**
@@ -261,6 +271,137 @@ class DbHandler implements iDbHandler
 		
 		
 		return new DbStatementResult($statement, $executionTime);
+	}
+	
+	/**
+	 * Execute a query, as is. Please pay attention to escaping any user provides values
+	 *
+	 * @param string $query The query to execute
+	 * @param bool $multiple Indicate if the $query string contains multiple queries that should be executed
+	 *
+	 * @return \Netsilik\DbHandler\DbResult\DbRawResult A DbRawResult
+	 * @throws \Exception
+	 */
+	public function rawQuery(string $query) : DbRawResult
+	{
+		$this->_ensureConnected();
+		
+		$startTime = microtime(true);
+		if ( false === ($result = $this->_connection->query($query)) ) {
+			trigger_error('query failed: '.$this->_connection->error.' ('.$this->_connection->errno.')', E_USER_ERROR);
+		}
+		$queryTime = microtime(true) - $startTime;
+		
+		if ($result === true) {
+			$result = new stdClass();
+			$result->insert_id = $this->_connection->insert_id;
+			$result->affected_rows = $this->_connection->affected_rows;
+		}
+		
+		return new DbRawResult($result, $queryTime);
+	}
+	
+	/**
+	 * Escapes special characters in a string for use in an SQL statement, taking into account the current charset of the connection.
+	 *
+	 * @param string $value
+	 *
+	 * @return string
+	 * @throws \Exception
+	 */
+	public function escape(string $value) : string
+	{
+		$this->_ensureConnected();
+		
+		return $this->_connection->escape_string($value);
+	}
+	
+	/**
+	 * Start a transaction ('advanced' features such as WITH CONSISTENT SNAPSHOT are not supported)
+	 *
+	 * @return bool true on success, false on failure
+	 */
+	public function startTransaction() : bool
+	{
+		if ($this->_inTransaction) {
+			trigger_error('Implicit commit for previous transaction', E_USER_NOTICE);
+		} else {
+			$this->_connection->autocommit(false);
+		}
+		
+		$this->_inTransaction = true;
+		
+		return $this->_connection->begin_transaction();
+	}
+	
+	/**
+	 * Rollback a transaction
+	 *
+	 * @param bool $silent If false, a E_USER_NOTICE is emitted when no transaction has been started
+	 *
+	 * @return bool true on success, false on failure
+	 */
+	public function rollback($silent = false) : bool
+	{
+		if (!$silent && !$this->_inTransaction) {
+			trigger_error('No transaction started', E_USER_NOTICE);
+			
+			return false;
+		}
+		$this->_inTransaction = false;
+		
+		$result = $this->_connection->rollback();
+		$this->_connection->autocommit(true);
+		
+		return $result;
+	}
+	
+	/**
+	 * Commit a transaction
+	 *
+	 * @return bool true on success, false on failure
+	 */
+	public function commit() : bool
+	{
+		if ( ! $this->_inTransaction) {
+			trigger_error('No transaction started', E_USER_NOTICE);
+			return false;
+		}
+		$this->_inTransaction = false;
+		
+		$result = $this->_connection->commit();
+		$this->_connection->autocommit(true);
+		return $result;
+	}
+	
+	/**
+	 * Close the connection
+	 *
+	 * @return void
+	 */
+	public function close() : void
+	{
+		if ($this->_connection instanceof mysqli) {
+			$this->_connection->close();
+		}
+		
+		$this->_connection = null;
+	}
+	
+	// ---[ Private methods ]---------------------------------------------
+	
+	/**
+	 * Re-establish the connection with the MySQL server if we are currently disconnected
+	 *
+	 * @return void
+	 * @throws \Exception
+	 */
+	private function _ensureConnected() : void
+	{
+		if (!$this->isConnected()) {
+			trigger_error('Reconnecting to DB', E_USER_NOTICE);
+			$this->connect();
+		}
 	}
 	
 	/**
@@ -421,64 +562,6 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
-	 * Execute a query, as is. Please pay attention to escaping any user provides values
-	 *
-	 * @param string $query The query to execute
-	 * @param bool $multiple Indicate if the $query string contains multiple queries that should be executed
-	 *
-	 * @return \Netsilik\DbHandler\DbResult\DbRawResult A DbRawResult
-	 * @throws \Exception
-	 */
-	public function rawQuery(string $query)
-	{
-		$this->_ensureConnected();
-		
-		$startTime = microtime(true);
-		if ( false === ($result = $this->_connection->query($query)) ) {
-			trigger_error('query failed: '.$this->_connection->error.' ('.$this->_connection->errno.')', E_USER_ERROR);
-		}
-		$queryTime = microtime(true) - $startTime;
-		
-		if ($result === true) {
-			$result = new stdClass();
-			$result->insert_id = $this->_connection->insert_id;
-			$result->affected_rows = $this->_connection->affected_rows;
-		}
-		
-		return new DbRawResult($result, $queryTime);
-	}
-	
-	/**
-	 * Escapes special characters in a string for use in an SQL statement, taking into account the current charset of the connection.
-	 *
-	 * @param string $value
-	 *
-	 * @return string
-	 * @throws \Exception
-	 */
-	public function escape(string $value) : string
-	{
-		$this->_ensureConnected();
-		
-		return $this->_connection->escape_string($value);
-	}
-	
-	/**
-	 * Re-establish the connection with the MySQL server if we are currently disconnected
-	 *
-	 * @return void
-	 * @throws \Exception
-	 */
-	private function _ensureConnected() : void
-	{
-		if (!$this->isConnected()) {
-			trigger_error('Reconnecting to DB', E_USER_NOTICE);
-			$this->connect();
-		}
-	}
-	
-	
-	/**
 	 * PHP expects the parameters passed to mysqli_stmt::bind_param to be references. However, we will do the binding after query execution
 	 * So, this functions quickly solves the issues by wrapping the arguments in an associative array.
 	 *
@@ -494,88 +577,6 @@ class DbHandler implements iDbHandler
 		}
 		
 		return $references;
-	}
-	
-	/**
-	 * Rollback a transaction
-	 *
-	 * @param bool $silent If false, a E_USER_NOTICE is emitted when no transaction has been started
-	 *
-	 * @return bool true on success, false on failure
-	 */
-	public function rollback($silent = false) : bool
-	{
-		if (!$silent && !$this->_inTransaction) {
-			trigger_error('No transaction started', E_USER_NOTICE);
-			
-			return false;
-		}
-		$this->_inTransaction = false;
-		
-		$result = $this->_connection->rollback();
-		$this->_connection->autocommit(true);
-		
-		return $result;
-	}
-	
-	/** 
-	 * Select a database to use on current connection
-	 *
-	 * @param string $dbName name of the database to select
-	 *
-	 * @return true on success, false otherwise
-	 */
-	public function selectDb(string $dbName) : bool
-	{
-		return $this->_connection->select_db($dbName);
-	}
-	
-	/**
-	 * Set the character set for the connection
-	 *
-	 * @param string $characterSet The name of the character set to use
-	 *
-	 * @return iDbHandler $this
-	 */
-	public function setConnectionCharSet($characterSet) : iDbHandler
-	{
-		$this->_connection->set_charset($characterSet);
-		
-		return $this;
-	}
-	
-	/**
-	 * Set the collation for the connection
-	 *
-	 * @param string $collation The name of the collation to use
-	 *
-	 * @return iDbHandler $this
-	 *
-	 * @throws \Exception
-	 */
-	public function setConnectionCollation($collation) : iDbHandler
-	{
-		$this->query('SET collation_connection = %s', [$collation]);
-		
-		return $this;
-	}
-	
-	/**
-	 * Start a transaction ('advanced' features such as WITH CONSISTENT SNAPSHOT are not supported)
-	 *
-	 * @return bool true on success, false on failure
-	 */
-	public function startTransaction() : bool
-	{
-		if ($this->_inTransaction) {
-			trigger_error('Implicit commit for previous transaction', E_USER_NOTICE);
-		} else {
-			$this->_connection->autocommit(false);
-		}
-		
-		$this->_inTransaction = true;
-		
-		return $this->_connection->begin_transaction();
 	}
 	
 	/**

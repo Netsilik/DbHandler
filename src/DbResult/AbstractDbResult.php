@@ -65,8 +65,7 @@ abstract class AbstractDbResult implements iDbResult {
 	}
 	
 	/**
-	 * Get the query execution 
-	 * @return int time in seconds for this query
+	 * {@inheritDoc}
 	 */
 	public function getQueryTime()
 	{

@@ -59,4 +59,10 @@ interface iDbResult {
 	 * @return int number of records in this result set
 	 */
 	public function getRecordCount();
+	
+	/**
+	 * Get the query execution
+	 * @return int time in seconds for this query
+	 */
+	public function getQueryTime();
 }

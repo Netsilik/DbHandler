@@ -8,8 +8,8 @@ namespace Netsilik\DbHandler;
  */
 
 use mysqli;
-use Netsilik\DbHandler\DbResult\DbRawResult;
-use Netsilik\DbHandler\DbResult\DbStatementResult;
+use Netsilik\DbHandler\DbResult\iDbResult;
+
 
 interface iDbHandler
 {
@@ -55,11 +55,11 @@ interface iDbHandler
 	 * @param array $params        An optional array, with values matching the parameter markers in $query
 	 * @param int $failRetryCount The number of times failed queries should be retried, for recoverable error numbers
 	 *
-	 * @return \Netsilik\DbHandler\DbResult\DbStatementResult object holding the result of the executed query
+	 * @return \Netsilik\DbHandler\DbResult\iDbResult An iDbResult instance with the result of the executed query
 	 * @throws \Exception
 	 * @throws \InvalidArgumentException
 	 */
-	public function query(string $query, array $params = [], int $failRetryCount = 3) : DbStatementResult;
+	public function query(string $query, array $params = [], int $failRetryCount = 3) : iDbResult;
 	
 	/**
 	 * Execute a query, as is. Please pay attention to escaping any user provides values
@@ -67,10 +67,10 @@ interface iDbHandler
 	 * @param string $query The query to execute
 	 * @param bool $multiple Indicate if the $query string contains multiple queries that should be executed
 	 *
-	 * @return \Netsilik\DbHandler\DbResult\DbRawResult A DbRawResult
+	 * @return \Netsilik\DbHandler\DbResult\iDbResult A iDbResult implementation
 	 * @throws \Exception
 	 */
-	public function rawQuery(string $query) : DbRawResult;
+	public function rawQuery(string $query) : iDbResult;
 	
 	/**
 	 * Escapes special characters in a string for use in an SQL statement, taking into account the current charset of the connection.

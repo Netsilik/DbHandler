@@ -12,6 +12,7 @@ use stdClass;
 use Exception;
 use mysqli_stmt;
 use InvalidArgumentException;
+use Netsilik\DbHandler\DbResult\iDbResult;
 use Netsilik\DbHandler\DbResult\DbRawResult;
 use Netsilik\DbHandler\DbResult\DbStatementResult;
 
@@ -199,10 +200,10 @@ class DbHandler implements iDbHandler
 	/**
 	 * Get the information on the server and clients character set and collation settings
 	 *
-	 * @return DbStatementResult A AbstractDbResult object holding the result of the executed query
+	 * @return \Netsilik\DbHandler\DbResult\iDbResult A AbstractDbResult object holding the result of the executed query
 	 * @throws \Exception
 	 */
-	public function getCharsetAndCollationInfo() : DbStatementResult
+	public function getCharsetAndCollationInfo() : iDbResult
 	{
 		return $this->query("SHOW VARIABLES WHERE Variable_name LIKE 'character\_set\_%' OR Variable_name LIKE 'collation%'");
 	}
@@ -218,7 +219,7 @@ class DbHandler implements iDbHandler
 	/**
 	 * {@inheritDoc}
 	 */
-	public function query(string $query, array $params = [], int $failRetryCount = 3) : DbStatementResult
+	public function query(string $query, array $params = [], int $failRetryCount = 3) : iDbResult
 	{
 		list($query, $params) = $this->_preParse(trim($query), $params);
 		
@@ -246,14 +247,13 @@ class DbHandler implements iDbHandler
 		
 		$executionTime = microtime(true) - $startTime;
 		
-		
 		return new DbStatementResult($statement, $executionTime);
 	}
 	
 	/**
 	 * {@inheritDoc}
 	 */
-	public function rawQuery(string $query) : DbRawResult
+	public function rawQuery(string $query) : iDbResult
 	{
 		$this->_ensureConnected();
 		

@@ -21,6 +21,9 @@
         "phpunit/phpunit": "^8.2"
     },
     "autoload": {
-        "psr-4": { "Netsilik\\DbHandler\\": "src/" }
+        "psr-4": {
+            "Netsilik\\DbHandler\\": "src/",
+            "Tests\\": "tests/"
+        }
     }
 }

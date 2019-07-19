@@ -2,3 +2,4 @@
 /report/
 /.idea/
 
+/.phpunit.result.cache

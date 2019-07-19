@@ -1,9 +1,9 @@
 <?php
 
 /**
- * This file is copyright protected. It is not
- * allowed to adjust, reproduce or sell this
- * product without approval from the author.
+ * @package       netsilik/db-handler
+ * @copyright (c) 2011-2016 Netsilik (http://netsilik.nl)
+ * @license       EUPL-1.1 (European Union Public Licence, v1.1)
  */
 
 namespace Netsilik\DbHandler

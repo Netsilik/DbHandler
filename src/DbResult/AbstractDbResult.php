@@ -7,6 +7,7 @@ namespace Netsilik\DbHandler\DbResult;
  * @license EUPL-1.1 (European Union Public Licence, v1.1)
  */
 
+use Netsilik\DbHandler\Interfaces\iDbResult;
 
 
 /**

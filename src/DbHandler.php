@@ -12,8 +12,9 @@ use stdClass;
 use Exception;
 use mysqli_stmt;
 use InvalidArgumentException;
-use Netsilik\DbHandler\DbResult\iDbResult;
 use Netsilik\DbHandler\DbResult\DbRawResult;
+use Netsilik\DbHandler\Interfaces\iDbResult;
+use Netsilik\DbHandler\Interfaces\iDbHandler;
 use Netsilik\DbHandler\DbResult\DbStatementResult;
 
 

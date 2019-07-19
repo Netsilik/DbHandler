@@ -1,5 +1,5 @@
 <?php
-namespace Netsilik\DbHandler;
+namespace Netsilik\DbHandler\Interfaces;
 
 /**
  * @package       netsilik/db-handler
@@ -8,7 +8,6 @@ namespace Netsilik\DbHandler;
  */
 
 use mysqli;
-use Netsilik\DbHandler\DbResult\iDbResult;
 
 
 interface iDbHandler

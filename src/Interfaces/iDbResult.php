@@ -1,5 +1,5 @@
 <?php
-namespace Netsilik\DbHandler\DbResult;
+namespace Netsilik\DbHandler\Interfaces;
 
 /**
  * @package DbHandler

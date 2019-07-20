@@ -51,7 +51,7 @@ class ConnectTest extends BaseTestCase
 		$dbHandler->connect();
     }
     
-    public function test_whenNonExistingCACertificteFileGiven_thenInvalidArgumentExceptionThrown()
+    public function test_whenNonExistingCACertificateFileGiven_thenInvalidArgumentExceptionThrown()
     {
     	$mMysqli = self::createMock(mysqli::class);
 		
@@ -64,7 +64,7 @@ class ConnectTest extends BaseTestCase
 		$dbHandler->connect();
     }
     
-    public function test_whenValidCACertificteFileGiven_thenSslSetIsCalled()
+    public function test_whenValidCACertificateFileGiven_thenSslSetIsCalled()
     {
     	$mMysqli_result = self::createMock(mysqli_result::class);
 		

@@ -143,6 +143,7 @@ abstract class BaseTestCase extends phpUnitTestCase
 		}
 		
 		// Build a reasonably detailed failure message
+		$errorChunks = [];
 		if (!$errorTypeFound) {
 			$errorChunks[] = 'an error of type ' . self::ERROR_CONTANT_NAMES[$errorType];
 		}
@@ -163,7 +164,7 @@ abstract class BaseTestCase extends phpUnitTestCase
 	 */
 	private function _setupErrorHandler() : void
 	{
-		$this->_errors = []; // Reset errors at start of test case run
+		self::$_errors = []; // Reset errors at start of test case run
 		
 		$errorTypes = 0;
 		if (!Notice::$enabled) { // The value from convertNoticesToExceptions in phpunit.xml

@@ -20,7 +20,7 @@ namespace Netsilik\DbHandler
 		FunctionOverwrites::incrementCallCount($functionName);
 		
 		if (FunctionOverwrites::isActive($functionName)) {
-			return FunctionOverwrites::getNextReturnValue($functionName);
+			return FunctionOverwrites::shiftNextReturnValue($functionName);
 		}
 		
 		return \mysqli_init();

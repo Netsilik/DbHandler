@@ -26,7 +26,7 @@ class FunctionOverwrites
 	 *
 	 * @return void
 	 */
-	public static function incrementCallCount($functionName) : void
+	public static function incrementCallCount(string $functionName) : void
 	{
 		if (!isset(self::$_functionsCallCount[ $functionName ])) {
 			self::$_functionsCallCount[ $functionName ] = 1;
@@ -42,7 +42,7 @@ class FunctionOverwrites
 	 *
 	 * @return int The number of times the function was called
 	 */
-	public static function getCallCount($functionName) : int
+	public static function getCallCount(string $functionName) : int
 	{
 		return (isset(self::$_functionsCallCount[ $functionName ]) ? self::$_functionsCallCount[ $functionName ] : 0);
 	}
@@ -54,20 +54,24 @@ class FunctionOverwrites
 	 *
 	 * @return bool
 	 */
-	public static function isActive($functionName) : bool
+	public static function isActive(string $functionName) : bool
 	{
 		return (isset(self::$_mockFunctionsReturnValues[ $functionName ]) && count(self::$_mockFunctionsReturnValues[ $functionName ]) > 0);
 	}
 	
 	/**
-	 * @param string $functionName The name of the function to overwrite
-	 * @param array  $returnValues The values that should be returned by each consecutive call to the overwritten function
+	 * @param string $functionName        The name of the function to overwrite
+	 * @param mixed  $returnValue         The value that should be returned by the rist call to the overwritten function
+	 * @param mixed  ...$nextReturnValues The value(s) that should be returned by each consecutive call to the overwritten function
 	 *
 	 * @return void
 	 */
-	public static function setActive($functionName, array $returnValues) : void
+	public static function setActive(string $functionName, $returnValue, ...$nextReturnValues) : void
 	{
-		self::$_mockFunctionsReturnValues[ $functionName ] = $returnValues;
+		$values = [$returnValue];
+		array_push($values, ...$nextReturnValues);
+		
+		self::$_mockFunctionsReturnValues[ $functionName ] = $values;
 	}
 	
 	/**
@@ -75,7 +79,7 @@ class FunctionOverwrites
 	 *
 	 * @return mixed The return value
 	 */
-	public static function getNextReturnValue(string $functionName)
+	public static function shiftNextReturnValue(string $functionName)
 	{
 		return array_shift(self::$_mockFunctionsReturnValues[ $functionName ]);
 	}

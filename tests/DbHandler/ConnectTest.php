@@ -32,7 +32,7 @@ class ConnectTest extends BaseTestCase
 		$mMysqli->method('ping')->willReturn(true);
 		$mMysqli->method('prepare')->willReturn($mMysqli_stmt);
 		
-		FunctionOverwrites::setActive('mysqli_init', [$mMysqli]);
+		FunctionOverwrites::setActive('mysqli_init', $mMysqli);
 		
 		$dbHandler = new DbHandler('localhost', 'root', 'secret');
 		$result = $dbHandler->connect();
@@ -42,7 +42,7 @@ class ConnectTest extends BaseTestCase
     
     public function test_whenMysqliInitDoesNotReturnMySQLiInstance_thenExceptionThrown()
     {
-		FunctionOverwrites::setActive('mysqli_init', [null]);
+		FunctionOverwrites::setActive('mysqli_init', null);
 		
 		self::expectException(Exception::class);
 		self::expectExceptionMessage('Could not initialize MySQLi instance');
@@ -55,7 +55,7 @@ class ConnectTest extends BaseTestCase
     {
     	$mMysqli = self::createMock(mysqli::class);
 		
-		FunctionOverwrites::setActive('mysqli_init', [$mMysqli]);
+		FunctionOverwrites::setActive('mysqli_init', $mMysqli);
 		
 		self::expectException(InvalidArgumentException::class);
 		self::expectExceptionMessage('CA-Certificate file could not be found');
@@ -79,7 +79,7 @@ class ConnectTest extends BaseTestCase
 		
 		$mMysqli->expects(self::once())->method('ssl_set');
 		
-		FunctionOverwrites::setActive('mysqli_init', [$mMysqli]);
+		FunctionOverwrites::setActive('mysqli_init', $mMysqli);
 		
 		$caCertFile = __DIR__ . '/../Mocks/ca_cert.pem';
 		$dbHandler = new DbHandler('localhost', 'root', 'secret', null, $caCertFile);
@@ -98,7 +98,7 @@ class ConnectTest extends BaseTestCase
 		$mMysqli->method('real_connect')->willReturn(false);
 	//	$mMysqli->connect_error = 'fail'; // Cannot set properties on mock object, because of https://bugs.php.net/bug.php?id=63591
 
-		FunctionOverwrites::setActive('mysqli_init', [$mMysqli]);
+		FunctionOverwrites::setActive('mysqli_init', $mMysqli);
 
 		self::expectException(Exception::class);
 		self::expectExceptionMessage('Could not connect to DB-server: ' . null);
@@ -123,7 +123,7 @@ class ConnectTest extends BaseTestCase
 		
 		$mMysqli->expects(self::once())->method('select_db');
 		
-		FunctionOverwrites::setActive('mysqli_init', [$mMysqli]);
+		FunctionOverwrites::setActive('mysqli_init', $mMysqli);
 		
 		$dbHandler = new DbHandler('localhost', 'root', 'secret', 'test');
 		$result = $dbHandler->connect();

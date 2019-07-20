@@ -302,9 +302,9 @@ class DbHandler implements iDbHandler
 	/**
 	 * {@inheritDoc}
 	 */
-	public function rollback($silent = false) : bool
+	public function rollback() : bool
 	{
-		if (!$silent && !$this->_inTransaction) {
+		if (!$this->_inTransaction) {
 			trigger_error('No transaction started', E_USER_NOTICE);
 			
 			return false;

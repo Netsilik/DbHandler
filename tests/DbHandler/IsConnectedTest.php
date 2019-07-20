@@ -1,5 +1,5 @@
 <?php
-namespace Tests\Controllers\Login\ShowController;
+namespace Tests\DbHandler;
 
 /**
  * @package       netsilik/db-handler

@@ -9,10 +9,11 @@ namespace Tests;
 
 use Closure;
 use ErrorException;
+use ReflectionClass;
+use Tests\Mocks\FunctionOverwrites;
 use PHPUnit\Framework\Error\Notice;
 use PHPUnit\Framework\Error\Warning;
 use PHPUnit\Framework\TestCase AS phpUnitTestCase;
-use Tests\Mocks\FunctionOverwrite;
 
 
 abstract class BaseTestCase extends phpUnitTestCase
@@ -35,21 +36,41 @@ abstract class BaseTestCase extends phpUnitTestCase
 	 */
 	protected function setUp() : void
 	{
-		FunctionOverwrite::resetCallCount();
-		
 		$this->_setupErrorHandler();
 	}
 	
+	/**
+	 * Call a private or protected method
+	 *
+	 * @param object $instance   The instance of the class to call the specified method on
+	 * @param string $method     The name of the method to call on the provided instance
+	 * @param array  $parameters The parameters to pass into the specified method
+	 *
+	 * @return mixed
+	 * @throws \ReflectionException
+	 */
+    protected function callInaccessibleMethod($instance, $method, array $parameters = [])
+    {
+        $class = new ReflectionClass(get_class($instance));
+        $method = $class->getMethod($method);
+        $method->setAccessible(true);
+		
+        return $method->invokeArgs($instance, $parameters);
+    }
+    
 	/**
 	 * {@inheritDoc}
 	 */
 	public function tearDown() : void
 	{
 		$this->_restoreErrorHandler();
+		
+		FunctionOverwrites::reset();
 	}
 	
 	/**
-	 * @param int    $errorType	The type of error to that we expected. See {@link https://www.php.net/manual/en/errorfunc.constants.php} for more details.
+	 * @param int    $errorType    The type of error to that we expected. See {@link https://www.php.net/manual/en/errorfunc.constants.php} for more
+	 *                             details.
 	 * @param string $errorMessage The message of the error we expected
 	 */
 	public function assertErrorTriggered(int $errorType, string $errorMessage) : void
@@ -86,6 +107,7 @@ abstract class BaseTestCase extends phpUnitTestCase
 	
 	/**
 	 * Make sure we can assert that Warnings and Notices are triggered, without them being fatal
+	 *
 	 * @return void
 	 */
 	private function _setupErrorHandler() : void
@@ -120,6 +142,7 @@ abstract class BaseTestCase extends phpUnitTestCase
 	
 	/**
 	 * Restore the original error handler
+	 *
 	 * @return void
 	 */
 	private function _restoreErrorHandler() : void

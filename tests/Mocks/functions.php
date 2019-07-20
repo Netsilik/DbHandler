@@ -8,14 +8,19 @@
 
 namespace Netsilik\DbHandler
 {
-	use Tests\Mocks\FunctionOverwrite;
+	
+	use ReflectionFunction;
+	use Tests\Mocks\FunctionOverwrites;
+	
 	
 	function mysqli_init() : \mysqli
 	{
-		FunctionOverwrite::incrementCallCount('mysqli_init');
+		$functionName = (new ReflectionFunction(__FUNCTION__))->getShortName();
 		
-		if (FunctionOverwrite::isActive('mysqli_init')) {
-			return \mysqli_init();
+		FunctionOverwrites::incrementCallCount($functionName);
+		
+		if (FunctionOverwrites::isActive($functionName)) {
+			return FunctionOverwrites::getNextReturnValue($functionName);
 		}
 		
 		return \mysqli_init();

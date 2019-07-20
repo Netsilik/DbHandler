@@ -30,7 +30,7 @@ abstract class BaseTestCase extends phpUnitTestCase
 	/**
 	 * @var array $_errors
 	 */
-	private $_errors = [];
+	private static $_errors = [];
 	
 	/**
 	 * {@inheritDoc}
@@ -49,7 +49,7 @@ abstract class BaseTestCase extends phpUnitTestCase
 	 *
 	 * @return mixed
 	 */
-    protected function callInaccessibleMethod(object $instance, string $method, array $parameters = [])
+    public static function callInaccessibleMethod(object $instance, string $method, array $parameters = [])
     {
     	try {
 			$class = new ReflectionClass(get_class($instance));
@@ -71,7 +71,7 @@ abstract class BaseTestCase extends phpUnitTestCase
 	 *
 	 * @return object The value of the $instance parameter
 	 */
-	protected function setInaccessibleProperty(object $instance, string $property, $value) : object
+	public static function setInaccessibleProperty(object $instance, string $property, $value) : object
 	{
 		try {
 			$class = new ReflectionClass(get_class($instance));
@@ -101,12 +101,12 @@ abstract class BaseTestCase extends phpUnitTestCase
 	 *                             details.
 	 * @param string $errorMessage The message of the error we expected
 	 */
-	public function assertErrorTriggered(int $errorType, string $errorMessage) : void
+	public static function assertErrorTriggered(int $errorType, string $errorMessage) : void
 	{
 		$errorTypeFound = false;
 		$errorMessageFound = false;
 		
-		foreach ($this->_errors as $error) {
+		foreach (self::$_errors as $error) {
 			if ($error['errorType'] === $errorType && $error['errorMessage'] === $errorMessage) {
 				self::assertTrue(true); // Register this success as an assertion
 				return; // All ok!
@@ -131,7 +131,7 @@ abstract class BaseTestCase extends phpUnitTestCase
 		$notFoundChunk = (count($errorChunks) === 2 ? 'either ' : '') . implode(' or ', $errorChunks);
 		$foundChunk = (count($errorChunks) === 1 ? ' (we did see the correct error ' . ($errorTypeFound ? 'type' : 'message') . ')' : '');
 		
-		$this->fail('Failed asserting that ' . $notFoundChunk . ' was triggered' . $foundChunk . '.');
+		self::fail('Failed asserting that ' . $notFoundChunk . ' was triggered' . $foundChunk . '.');
 	}
 	
 	/**
@@ -159,7 +159,7 @@ abstract class BaseTestCase extends phpUnitTestCase
 					throw new ErrorException($errorMessage, $errorType, $errorType, $errorFile, $errorLine);
 				}
 				
-				$this->_errors[] = [
+				self::$_errors[] = [
 					'errorType'    => $errorType,
 					'errorMessage' => $errorMessage,
 				];

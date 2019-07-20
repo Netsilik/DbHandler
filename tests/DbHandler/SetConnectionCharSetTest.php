@@ -16,16 +16,16 @@ class SetConnectionCharSetTest extends BaseTestCase
 {
     public function test_whenMethodCalled_thenSetCharsetCalledAndSelfReturned()
     {
-		$mMysqli = $this->createMock(mysqli::class);
-		$mMysqli->expects($this->once())->method('set_charset');
+		$mMysqli = self::createMock(mysqli::class);
+		$mMysqli->expects(self::once())->method('set_charset');
 	
 		$dbHandler = new DbHandler('localhost', 'root', 'secret');
 	
-		$this->setInaccessibleProperty($dbHandler, '_connection', $mMysqli);
+		self::setInaccessibleProperty($dbHandler, '_connection', $mMysqli);
 	
 	
 		$result = $dbHandler->setConnectionCharSet('utf8-bin');
 		
-		$this->assertEquals($dbHandler, $result);
+		self::assertEquals($dbHandler, $result);
 	}
 }

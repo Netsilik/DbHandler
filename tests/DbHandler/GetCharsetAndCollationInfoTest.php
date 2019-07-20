@@ -19,25 +19,25 @@ class GetCharsetAndCollationInfoTest extends BaseTestCase
 {
     public function test_whenMethodCalled_thenQueryExecutedAndIDbResultReturned()
     {
-    	$mMysqli_result = $this->createMock(mysqli_result::class);
+    	$mMysqli_result = self::createMock(mysqli_result::class);
 		
-		$mMysqli_stmt = $this->createMock(mysqli_stmt::class);
+		$mMysqli_stmt = self::createMock(mysqli_stmt::class);
 		$mMysqli_stmt->method('execute')->willReturn(true);
 		$mMysqli_stmt->method('result_metadata')->willReturn($mMysqli_result);
 		
-		$mMysqli = $this->createMock(mysqli::class);
+		$mMysqli = self::createMock(mysqli::class);
 		$mMysqli->method('ping')->willReturn(true);
 		$mMysqli->method('prepare')->willReturn($mMysqli_stmt);
 		
-		$mMysqli_stmt->expects($this->once())->method('execute');
+		$mMysqli_stmt->expects(self::once())->method('execute');
 	
 		$dbHandler = new DbHandler('localhost', 'root', 'secret');
 	
-		$this->setInaccessibleProperty($dbHandler, '_connection', $mMysqli);
+		self::setInaccessibleProperty($dbHandler, '_connection', $mMysqli);
 	
 	
 		$result = $dbHandler->getCharsetAndCollationInfo();
 		
-		$this->assertInstanceOf(iDbResult::class, $result);
+		self::assertInstanceOf(iDbResult::class, $result);
 	}
 }

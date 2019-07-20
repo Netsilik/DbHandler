@@ -19,24 +19,24 @@ class IsConnectedTest extends BaseTestCase
 		$dbHandler = new DbHandler('localhost', 'root', 'secret');
 		$result = $dbHandler->isConnected();
 		
-		$this->assertErrorTriggered(E_USER_WARNING, 'Attempted to ping, but connection not initialized');
+		self::assertErrorTriggered(E_USER_WARNING, 'Attempted to ping, but connection not initialized');
 		
-		$this->assertFalse($result);
+		self::assertFalse($result);
 	}
 	
     public function test_whenConnectionOk_thenPingCalled()
     {
-		$mMysqli = $this->createMock(mysqli::class);
+		$mMysqli = self::createMock(mysqli::class);
 		$mMysqli->method('ping')->willReturn(true);
 	
-		$mMysqli->expects($this->once())->method('ping');
+		$mMysqli->expects(self::once())->method('ping');
 		
 		$dbHandler = new DbHandler('localhost', 'root', 'secret');
 	
-		$this->setInaccessibleProperty($dbHandler, '_connection', $mMysqli);
+		self::setInaccessibleProperty($dbHandler, '_connection', $mMysqli);
 		
 		$result = $dbHandler->isConnected();
 		
-		$this->assertTrue($result);
+		self::assertTrue($result);
 	}
 }

@@ -21,15 +21,15 @@ class EscapeTest extends BaseTestCase
 {
     public function test_whenMethodCalled_thenEscapedStringReturned()
     {
-		$mMysqli = $this->createMock(mysqli::class);
+		$mMysqli = self::createMock(mysqli::class);
 		$mMysqli->method('ping')->willReturn(true);
 		$mMysqli->method('escape_string')->willReturn('foo');
 		
 		$dbHandler = new DbHandler('localhost', 'root', 'secret');
 	
-		$mMysqli->expects($this->once())->method('escape_string');
+		$mMysqli->expects(self::once())->method('escape_string');
 		
-		$this->setInaccessibleProperty($dbHandler, '_connection', $mMysqli);
+		self::setInaccessibleProperty($dbHandler, '_connection', $mMysqli);
 		
 		$dbHandler->escape('foo');
     }

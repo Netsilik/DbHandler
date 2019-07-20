@@ -16,14 +16,14 @@ class GetConnectionTest extends BaseTestCase
 {
     public function test_whenMethodCalled_thenValidInstanceReturned()
     {
-		$mMysqli = $this->createMock(mysqli::class);
+		$mMysqli = self::createMock(mysqli::class);
 		
 		$dbHandler = new DbHandler('localhost', 'root', 'secret');
 		
-		$this->setInaccessibleProperty($dbHandler, '_connection', $mMysqli);
+		self::setInaccessibleProperty($dbHandler, '_connection', $mMysqli);
 		
 		$result = $dbHandler->getConnection();
 		
-		$this->assertEquals($mMysqli, $result);
+		self::assertEquals($mMysqli, $result);
 	}
 }

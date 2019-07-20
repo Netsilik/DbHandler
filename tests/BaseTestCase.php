@@ -108,6 +108,7 @@ abstract class BaseTestCase extends phpUnitTestCase
 		
 		foreach ($this->_errors as $error) {
 			if ($error['errorType'] === $errorType && $error['errorMessage'] === $errorMessage) {
+				self::assertTrue(true); // Register this success as an assertion
 				return; // All ok!
 			}
 			

@@ -60,6 +60,9 @@ class FunctionOverwrites
 	}
 	
 	/**
+	 * Enable overwriting the function return values. The specified function will return the given return value(s) until they have all been returned,
+	 * after which the overwritten function return the return value from the native function.
+	 *
 	 * @param string $functionName        The name of the function to overwrite
 	 * @param mixed  $returnValue         The value that should be returned by the rist call to the overwritten function
 	 * @param mixed  ...$nextReturnValues The value(s) that should be returned by each consecutive call to the overwritten function

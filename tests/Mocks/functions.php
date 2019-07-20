@@ -13,7 +13,7 @@ namespace Netsilik\DbHandler
 	use Tests\Mocks\FunctionOverwrites;
 	
 	
-	function mysqli_init() : \mysqli
+	function mysqli_init()
 	{
 		$functionName = (new ReflectionFunction(__FUNCTION__))->getShortName();
 		

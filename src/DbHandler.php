@@ -120,7 +120,7 @@ class DbHandler implements iDbHandler
 		if (null !== $this->_caCertFile) {
 			// Make sure the CA certificate file is available so that we can setup an encrypted connection
 			if (false === ($caCertFile = realpath($this->_caCertFile))) {
-				throw new Exception('CA-Certificate file could not be found');
+				throw new InvalidArgumentException('CA-Certificate file could not be found');
 			}
 			
 			$this->_connection->ssl_set(null, null, $caCertFile, null, null);
@@ -130,7 +130,7 @@ class DbHandler implements iDbHandler
 		$this->_connection->options(MYSQLI_OPT_CONNECT_TIMEOUT, self::CONNECTION_TIMEOUT);
 		
 		// Open connection
-		if (!$this->_connection->real_connect($this->_host, $this->_userName, $this->_password) || null !== $this->_connection->connect_error) {
+		if (!$this->_connection->real_connect($this->_host, $this->_userName, $this->_password) || $this->_connection->connect_errno > 0) {
 			$this->_connection = null;
 			throw new Exception('Could not connect to DB-server: ' . $this->_connection->connect_error);
 		}
@@ -201,7 +201,7 @@ class DbHandler implements iDbHandler
 	/**
 	 * Get the information on the server and clients character set and collation settings
 	 *
-	 * @return \Netsilik\DbHandler\DbResult\iDbResult A AbstractDbResult object holding the result of the executed query
+	 * @return \Netsilik\DbHandler\interfaces\iDbResult A AbstractDbResult object holding the result of the executed query
 	 * @throws \Exception
 	 */
 	public function getCharsetAndCollationInfo() : iDbResult
@@ -260,7 +260,7 @@ class DbHandler implements iDbHandler
 		
 		$startTime = microtime(true);
 		if ( false === ($result = $this->_connection->query($query)) ) {
-			trigger_error('query failed: '.$this->_connection->error.' ('.$this->_connection->errno.')', E_USER_ERROR);
+			throw new Exception('query failed: '.$this->_connection->error.' ('.$this->_connection->errno.')');
 		}
 		$queryTime = microtime(true) - $startTime;
 		

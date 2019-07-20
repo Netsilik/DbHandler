@@ -10,6 +10,7 @@ namespace Tests;
 use Closure;
 use ErrorException;
 use ReflectionClass;
+use ReflectionException;
 use Tests\Mocks\FunctionOverwrites;
 use PHPUnit\Framework\Error\Notice;
 use PHPUnit\Framework\Error\Warning;
@@ -47,16 +48,43 @@ abstract class BaseTestCase extends phpUnitTestCase
 	 * @param array  $parameters The parameters to pass into the specified method
 	 *
 	 * @return mixed
-	 * @throws \ReflectionException
 	 */
-    protected function callInaccessibleMethod($instance, $method, array $parameters = [])
+    protected function callInaccessibleMethod(object $instance, string $method, array $parameters = [])
     {
-        $class = new ReflectionClass(get_class($instance));
-        $method = $class->getMethod($method);
-        $method->setAccessible(true);
+    	try {
+			$class = new ReflectionClass(get_class($instance));
+			$method = $class->getMethod($method);
+			$method->setAccessible(true);
+		} catch (ReflectionException $e) {
+			trigger_error($e->getMessage(), E_USER_ERROR);
+		}
 		
         return $method->invokeArgs($instance, $parameters);
     }
+    
+	/**
+	 * Sets a private or protected property
+	 *
+	 * @param object $instance The instance of the class to set the specified property on
+	 * @param string $property The name of the property to set on the provided instance
+	 * @param mixed  $value    The value to set the specified property to
+	 *
+	 * @return object The value of the $instance parameter
+	 */
+	protected function setInaccessibleProperty(object $instance, string $property, $value) : object
+	{
+		try {
+			$class = new ReflectionClass(get_class($instance));
+			
+			$property = $class->getProperty($property);
+			$property->setAccessible(true);
+			$property->setValue($instance, $value);
+		} catch (ReflectionException $e) {
+			trigger_error($e->getMessage(), E_USER_ERROR);
+		}
+		
+		return $instance;
+	}
     
 	/**
 	 * {@inheritDoc}

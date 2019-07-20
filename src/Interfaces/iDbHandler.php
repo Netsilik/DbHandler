@@ -17,6 +17,7 @@ interface iDbHandler
 	 *
 	 * @return iDbHandler $this
 	 * @throws \Exception
+	 * @throws \InvalidArgumentException
 	 */
 	public function connect() : iDbHandler;
 	

@@ -32,6 +32,8 @@ class DbStatementResult extends AbstractDbResult
 		
 		if ( false !== ($metaData = $statement->result_metadata()) ) {
 			$statement->store_result();
+			
+			$params = [];
 			while ($field = $metaData->fetch_field()) {
 				$params[] = &$this->_result[$field->name];
 			}
@@ -51,6 +53,7 @@ class DbStatementResult extends AbstractDbResult
 		
 		$records = array();
 		while ($this->_statement->fetch()) {
+			$column = [];
 			foreach($this->_result as $name => $value) {
 				$column[$name] = $value;
 			}

@@ -153,7 +153,7 @@ class DbHandler implements iDbHandler
 	public function isConnected() : bool
 	{
 		if (!($this->_connection instanceof mysqli)) {
-			trigger_error('attempted to ping, but connection not initialized', E_USER_WARNING);
+			trigger_error('Attempted to ping, but connection not initialized', E_USER_WARNING);
 			return false;
 		}
 		

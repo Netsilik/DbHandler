@@ -63,7 +63,7 @@ abstract class BaseTestCase extends phpUnitTestCase
     }
     
 	/**
-	 * Sets a private or protected property
+	 * Set the value of a private or protected property
 	 *
 	 * @param object $instance The instance of the class to set the specified property on
 	 * @param string $property The name of the property to set on the provided instance
@@ -84,6 +84,28 @@ abstract class BaseTestCase extends phpUnitTestCase
 		}
 		
 		return $instance;
+	}
+ 
+	/**
+	 * Get the value of a private or protected property
+	 *
+	 * @param object $instance The instance of the class to set the specified property on
+	 * @param string $property The name of the property to set on the provided instance
+	 *
+	 * @return mixed The value of the $instance parameter
+	 */
+	public static function getInaccessibleProperty(object $instance, string $property)
+	{
+		try {
+			$class = new ReflectionClass(get_class($instance));
+			
+			$property = $class->getProperty($property);
+			$property->setAccessible(true);
+		} catch (ReflectionException $e) {
+			trigger_error($e->getMessage(), E_USER_ERROR);
+		}
+		
+		return $property->getValue($instance);
 	}
     
 	/**
@@ -120,7 +142,7 @@ abstract class BaseTestCase extends phpUnitTestCase
 			}
 		}
 		
-		// Build a resonably detailed failure message
+		// Build a reasonably detailed failure message
 		if (!$errorTypeFound) {
 			$errorChunks[] = 'an error of type ' . self::ERROR_CONTANT_NAMES[$errorType];
 		}

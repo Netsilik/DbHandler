@@ -43,13 +43,13 @@ abstract class BaseTestCase extends phpUnitTestCase
 	/**
 	 * Call a private or protected method
 	 *
-	 * @param object $instance   The instance of the class to call the specified method on
-	 * @param string $method     The name of the method to call on the provided instance
-	 * @param array  $parameters The parameters to pass into the specified method
+	 * @param object $instance      The instance of the class to call the specified method on
+	 * @param string $method        The name of the method to call on the provided instance
+	 * @param mixed  ...$parameters The value(s) of the parameter(s) to be passes into the specified method
 	 *
 	 * @return mixed
 	 */
-    public static function callInaccessibleMethod(object $instance, string $method, array $parameters = [])
+    public static function callInaccessibleMethod(object $instance, string $method, ...$parameters)
     {
     	try {
 			$class = new ReflectionClass(get_class($instance));

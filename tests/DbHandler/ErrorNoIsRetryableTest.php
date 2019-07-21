@@ -17,7 +17,7 @@ class ErrorNoIsRetryableTest extends BaseTestCase
     {
 		$dbHandler = new DbHandler('localhost', 'root', 'secret');
 
-		$result = self::callInaccessibleMethod($dbHandler, '_errorNoIsRetryable', [1000]);
+		$result = self::callInaccessibleMethod($dbHandler, '_errorNoIsRetryable', 1000);
 
 		self::assertFalse($result);
 	}
@@ -26,7 +26,7 @@ class ErrorNoIsRetryableTest extends BaseTestCase
     {
 		$dbHandler = new DbHandler('localhost', 'root', 'secret');
 
-		$result = self::callInaccessibleMethod($dbHandler, '_errorNoIsRetryable', [2006]);
+		$result = self::callInaccessibleMethod($dbHandler, '_errorNoIsRetryable', 2006);
 
 		self::assertTrue($result);
 	}
@@ -35,7 +35,7 @@ class ErrorNoIsRetryableTest extends BaseTestCase
     {
 		$dbHandler = new DbHandler('localhost', 'root', 'secret');
 
-		$result = self::callInaccessibleMethod($dbHandler, '_errorNoIsRetryable', [1205]);
+		$result = self::callInaccessibleMethod($dbHandler, '_errorNoIsRetryable', 1205);
 
 		self::assertTrue($result);
 	}

@@ -35,7 +35,7 @@ class DbRawResult extends AbstractDbResult
 	{
 		if ($this->_result instanceof mysqli_result) {
 			if (null === $this->_records) {
-				$this->_records = array();
+				$this->_records = [];
 				
 				while ($record = $this->_result->fetch_assoc()) {
 					$this->_records[] = $record;

@@ -16,7 +16,7 @@ use Netsilik\DbHandler\Interfaces\iDbResult;
 abstract class AbstractDbResult implements iDbResult {
 		
 	/**
-	 * @var int $_queryTime The query time in mili seconds
+	 * @var float $_queryTime The query time in mili seconds
 	 */
 	protected $_queryTime = 0;
 	
@@ -28,13 +28,13 @@ abstract class AbstractDbResult implements iDbResult {
 	/**
 	 * @inheritDoc
 	 */
-	public function fetchColumn($column = null)
+	public function fetchColumn(string $column = null) : array
 	{
 		$records = $this->fetch();
-		$values = array();
+		$values = [];
 		foreach ($records as $record) {
 			foreach ($record as $key => $val) {
-				if ( ! is_null($column) && $column <> $key) {
+				if ( null !== $column && $column <> $key) {
 					continue;
 				}
 				$values[] = $val;
@@ -47,7 +47,7 @@ abstract class AbstractDbResult implements iDbResult {
 	/**
 	 * @inheritDoc
 	 */
-	public function fetchField($field = null, int $recordNum = 0)
+	public function fetchField(string $field = null, int $recordNum = 0)
 	{
 		$records = $this->fetch();
 		if (null === $field) {
@@ -59,30 +59,31 @@ abstract class AbstractDbResult implements iDbResult {
 	/**
 	 * @inheritDoc
 	 */
-	public function fetchRecord($recordNum = 0)
+	public function fetchRecord(int $recordNum = 0) : array
 	{
 		$records = $this->fetch();
-		return isset($records[$recordNum]) ? $records[$recordNum] : array();	
+		return isset($records[$recordNum]) ? $records[$recordNum] : [];
 	}
 	
 	/**
 	 * {@inheritDoc}
 	 */
-	public function getQueryTime()
+	public function getQueryTime() : string
 	{
 		return number_format($this->_queryTime, 4);
 	}
 	
 	/**
 	 * Dump query result to std-out as an html table
+	 *
 	 * @return void
 	 */
-	public function dump()
+	public function dump() : void
 	{
 		echo "<div class=\"debug\">\n";
-		if (is_null($this->_result)) {
+		if (null === $this->_result) {
 			echo "<strong>Query OK, ".$this->getAffectedRecords()." rows affected (".$this->getQueryTime()." sec.)</strong>\n";
-		} elseif ( 0 == ($recordCount = $this->getRecordCount()) ) {
+		} elseif ( 0 === ($recordCount = $this->getRecordCount()) ) {
 			echo "<strong>empty set (".$this->getQueryTime()." sec.)</strong>\n";
 		} else {
 			$records = $this->fetch();

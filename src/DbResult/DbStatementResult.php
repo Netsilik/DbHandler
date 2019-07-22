@@ -51,7 +51,7 @@ class DbStatementResult extends AbstractDbResult
 			return false;
 		}
 		
-		$records = array();
+		$records = [];
 		while ($this->_statement->fetch()) {
 			$column = [];
 			foreach($this->_result as $name => $value) {

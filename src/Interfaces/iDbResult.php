@@ -24,7 +24,7 @@ interface iDbResult
 	 *
 	 * @return array an indexed array containing all fields for specified column or the first column if none specified
 	 */
-	public function fetchColumn($column = null);
+	public function fetchColumn(string $column = null) : array;
 	
 	/**
 	 * Fetch a field from a SELECT statement result
@@ -34,7 +34,7 @@ interface iDbResult
 	 *
 	 * @return mixed the value of the specified field
 	 */
-	public function fetchField($field = null, int $recordNum = 0);
+	public function fetchField(string $field = null, int $recordNum = 0);
 	
 	/**
 	 * Fetch a record from a SELECT statement result
@@ -43,7 +43,7 @@ interface iDbResult
 	 *
 	 * @return array an associative array containing all fields (columns) for specified record
 	 */
-	public function fetchRecord($recordNum = 0);
+	public function fetchRecord(int $recordNum = 0) : array;
 	
 	/**
 	 * Get the total number of records changed, deleted, or inserted by the last executed statement
@@ -78,5 +78,5 @@ interface iDbResult
 	 *
 	 * @return int time in seconds for this query
 	 */
-	public function getQueryTime();
+	public function getQueryTime() : string;
 }

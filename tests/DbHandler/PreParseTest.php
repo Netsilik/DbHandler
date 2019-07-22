@@ -145,5 +145,87 @@ class PreParseTest extends BaseTestCase
 		self::callInaccessibleMethod($dbHandler, '_preParse', "SELECT `id` FROM table WHERE `name` = %i AND `type` = %s", [123]);
 	}
 	
-	// check that f is converted to d
+    public function test_whenIndexedFloatParameterGiven_thenDoubleReturnedInTokenString()
+    {
+		$dbHandler = new DbHandler('localhost', 'root', 'secret');
+		
+		list($query, $params) = self::callInaccessibleMethod($dbHandler, '_preParse', "SELECT `id` FROM table WHERE `probability` = %f", [3.21]);
+		
+		self::assertEquals("SELECT `id` FROM table WHERE `probability` = ?", $query);
+		self::assertCount(2, $params);
+		self::assertEquals('d', $params[0]);
+		self::assertEquals(3.21, $params[1]);
+	}
+	
+    public function test_whenNamedFloatParameterGiven_thenDoubleReturnedInTokenString()
+    {
+		$dbHandler = new DbHandler('localhost', 'root', 'secret');
+		
+		list($query, $params) = self::callInaccessibleMethod($dbHandler, '_preParse', "SELECT `id` FROM table WHERE `probability` = %f:prob", ['prob' => 3.21]);
+		
+		self::assertEquals("SELECT `id` FROM table WHERE `probability` = ?", $query);
+		self::assertCount(2, $params);
+		self::assertEquals('d', $params[0]);
+		self::assertEquals(3.21, $params[1]);
+	}
+	
+    public function test_whenIndexedArrayParameterGivenOutsideAllAnyInSomeOperators_thenInvalidArgumentExceptionThrown()
+    {
+		$dbHandler = new DbHandler('localhost', 'root', 'secret');
+
+		self::expectException(InvalidArgumentException::class);
+		self::expectExceptionMessage('Array parameter expansion is only supported in the ALL, ANY, IN and SOME operators');
+		
+		self::callInaccessibleMethod($dbHandler, '_preParse', "SELECT `id` FROM table WHERE `name` = %i", [[123, 456, 789]]);
+	}
+	
+    public function test_whenIndexedArrayParameterGivenInsideAllAnyInSomeOperators_thenArrayExpandedInListOfParametersOfSpecifiedType()
+    {
+		$dbHandler = new DbHandler('localhost', 'root', 'secret');
+
+		list($query, $params) = self::callInaccessibleMethod($dbHandler, '_preParse', "SELECT `id` FROM table WHERE `type` = IN (%i) AND `name` = %s", [[123, 456, 789], 'foo']);
+		
+		self::assertEquals("SELECT `id` FROM table WHERE `type` = IN (?,?,?) AND `name` = ?", $query);
+		self::assertCount(5, $params);
+		self::assertEquals('iiis', $params[0]);
+		self::assertEquals(123, $params[1]);
+		self::assertEquals(456, $params[2]);
+		self::assertEquals(789, $params[3]);
+		self::assertEquals('foo', $params[4]);
+	}
+	
+    public function test_whenNamedParameterNotFound_thenInvalidArgumentExceptionThrown()
+    {
+		$dbHandler = new DbHandler('localhost', 'root', 'secret');
+
+		self::expectException(InvalidArgumentException::class);
+		self::expectExceptionMessage("Named parameter 'foo' not found");
+		
+		self::callInaccessibleMethod($dbHandler, '_preParse', "SELECT `id` FROM table WHERE `name` = %i:foo", []);
+	}
+	
+    public function test_whenNamedArrayParameterGivenOutsideAllAnyInSomeOperators_thenInvalidArgumentExceptionThrown()
+    {
+		$dbHandler = new DbHandler('localhost', 'root', 'secret');
+
+		self::expectException(InvalidArgumentException::class);
+		self::expectExceptionMessage('Array parameter expansion is only supported in the ALL, ANY, IN and SOME operators');
+		
+		self::callInaccessibleMethod($dbHandler, '_preParse', "SELECT `id` FROM table WHERE `name` = %i:foo", ['foo' => [123, 456, 789]]);
+	}
+	
+    public function test_whenNamedArrayParameterGivenInsideAllAnyInSomeOperators_thenArrayExpandedInListOfParametersOfSpecifiedType()
+    {
+		$dbHandler = new DbHandler('localhost', 'root', 'secret');
+
+		list($query, $params) = self::callInaccessibleMethod($dbHandler, '_preParse', "SELECT `id` FROM table WHERE `type` = IN (%i:foo) AND `name` = %s:bar", ['foo' => [123, 456, 789], 'bar' => 'baz']);
+		
+		self::assertEquals("SELECT `id` FROM table WHERE `type` = IN (?,?,?) AND `name` = ?", $query);
+		self::assertCount(5, $params);
+		self::assertEquals('iiis', $params[0]);
+		self::assertEquals(123, $params[1]);
+		self::assertEquals(456, $params[2]);
+		self::assertEquals(789, $params[3]);
+		self::assertEquals('baz', $params[4]);
+	}
 }

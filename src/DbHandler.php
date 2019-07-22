@@ -228,26 +228,22 @@ class DbHandler implements iDbHandler
 	{
 		list($query, $params) = $this->_preParse(trim($query), $params);
 		
-		if (strlen($params[0]) <> count($params) - 1) {
-			throw new InvalidArgumentException((count($params) - 1) . ' parameters specified, ' . strlen($params[0]) . ' expected');
-		}
-		
 		$this->_ensureConnected();
 		
 		$statement = $this->_connection->prepare($query);
 		if (!($statement instanceof mysqli_stmt) || $statement->errno > 0) {
-			throw new Exception('Query preparation failed: ' . $this->_connection->error);
+			throw new Exception('Query preparation failed: ' . $statement->error);
 		}
 		
 		if ((strlen($params[0]) > 0 && false === call_user_func_array([$statement, 'bind_param'], $this->_referenceValues($params))) || $statement->errno > 0) {
-			throw new Exception('Parameter binding failed');
+			throw new Exception('Parameter binding failed: ' . $statement->error);
 		}
 		
 		
 		$startTime = microtime(true);
 		
 		if (!$this->_executePreparedStatement($statement, $failRetryCount)) {
-			throw new Exception('Query failed: ' . $statement->error);
+			throw new Exception('Query execution failed: ' . $statement->error);
 		}
 		
 		$executionTime = microtime(true) - $startTime;
@@ -473,7 +469,7 @@ class DbHandler implements iDbHandler
 			}
 		}
 		
-		// Add check to see if there are any non-used parameters?
+		// Check for unused parameters?
 		
 		return [
 			$query,

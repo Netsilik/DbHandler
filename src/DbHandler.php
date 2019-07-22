@@ -372,12 +372,11 @@ class DbHandler implements iDbHandler
 	 */
 	private function _preParse(string $query, array $params) : array
 	{
-		$s = $d = false; // quoted string quote type
-		$queryLength = strlen($query);
-		
+		$s = $d = $b = false; // quoted string quote type (single, double, backtick)
 		$usedNamedParameters   = false;
 		$usesIndexedParameters = false;
 		
+		$queryLength = strlen($query);
 		$parsedParams = ['']; // first element is the token string
 		for ($i = 0; $i < $queryLength; $i++) {
 			switch ($query{$i}) {
@@ -385,15 +384,18 @@ class DbHandler implements iDbHandler
 					$i++;
 					break;
 				case '\'':
-					if (!$d) { $s = !$s; }
+					if (!$d && !$b) { $s = !$s; }
 					break;
 				case '"':
-					if (!$s) { $d = !$d; }
+					if (!$s && !$b) { $d = !$d; }
+					break;
+				case '`':
+					if (!$s && !$d) { $b = !$b; }
 					break;
 				case '%':
-					if (!$s && !$d && $i + 1 < $queryLength) {
-						if (false !== strpos('ifsb', $query{$i + 1})) { // look ahead: can we find a valid parameter type indicator
-							if ($i + 2 < $queryLength && $query{$i + 2} === ':') { // look ahead: can we find the named parameter indicator
+					if (!$s && !$d && !$b) { // Not in a quoted string
+						if ($i + 1 < $queryLength && false !== strpos('ifsb', $query{$i + 1})) { // look ahead: can we find a valid parameter type indicator?
+							if ($i + 3 < $queryLength && $query{$i + 2} === ':' && false !== stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query{$i + 3})) { // look ahead: is this a named parameter?
 								if ($usesIndexedParameters) {
 									throw new InvalidArgumentException('Mixed indexed and named parameters not supported, please use one or the other');
 								}
@@ -416,7 +418,7 @@ class DbHandler implements iDbHandler
 								
 								$query = substr_replace($query, '?', $i, 3 + strlen($paramName));
 								$queryLength -= 2 + strlen($paramName);
-							} else { // This is a non-named parameter
+							} elseif ($i + 2 === $queryLength || false === stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query{$i + 2})) { // look ahead: is this a non-named parameter?
 								if ($usedNamedParameters) {
 									throw new InvalidArgumentException('Mixed named and indexed parameters not supported, please use one or the other');
 								}
@@ -427,7 +429,7 @@ class DbHandler implements iDbHandler
 								$usesIndexedParameters = true;
 								
 								if (is_array($params[0])) {
-									if (1 !== preg_match('/(ALL|ANY|IN|SOME)\s*\(\s*$/i', substr($query, 0, $i))) { // look behind: are we in an IN clause?
+									if (1 !== preg_match('/(ALL|ANY|IN|SOME)\s*\(\s*$/i', substr($query, 0, $i))) { // look behind: are we in an ALL, ANY, IN or SOME clause?
 										throw new InvalidArgumentException('Array parameter expansion is only supported in the ALL, ANY, IN and SOME operators');
 									}
 									
@@ -455,6 +457,8 @@ class DbHandler implements iDbHandler
 				//	case: check for the various comment start chars (not implemented yet)
 			}
 		}
+		
+		// add check to see if there are any non-used parameters?
 		
 		return [
 			$query,

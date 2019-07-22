@@ -214,7 +214,11 @@ class DbHandler implements iDbHandler
 	 */
 	public function selectDb(string $dbName) : bool
 	{
-		return $this->_connection->select_db($dbName);
+		if (true !== $this->_connection->select_db($dbName)) {
+			throw new InvalidArgumentException("Could not select database '" . $dbName . "'");
+		}
+		
+		return true;
 	}
 	
 	/**

@@ -39,6 +39,7 @@ interface iDbHandler
 	 * @param string $dbName name of the database to select
 	 *
 	 * @return true on success, false otherwise
+	 * @throws \InvalidArgumentException
 	 */
 	public function selectDb(string $dbName) : bool;
 	

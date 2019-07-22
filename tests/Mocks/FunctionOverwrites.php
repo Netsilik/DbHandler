@@ -3,7 +3,7 @@ namespace Tests\Mocks;
 
 use ReflectionFunction;
 use ReflectionException;
-use http\Exception\InvalidArgumentException;
+use InvalidArgumentException;
 
 
 /**

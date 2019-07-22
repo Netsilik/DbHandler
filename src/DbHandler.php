@@ -407,17 +407,29 @@ class DbHandler implements iDbHandler
 								}
 								
 								if (!isset($params[ $paramName ])) {
-									throw new InvalidArgumentException('Named parameter ' . $paramName . ' not found');
+									throw new InvalidArgumentException("Named parameter '" . $paramName . "' not found");
 								}
 								if (is_array($params[ $paramName ])) {
-									throw new InvalidArgumentException('Array parameter expansion is not supported for named parameters');
+									if (1 !== preg_match('/(ALL|ANY|IN|SOME)\s*\(\s*$/i', substr($query, 0, $i))) { // look behind: are we in an ALL, ANY, IN or SOME clause?
+										throw new InvalidArgumentException('Array parameter expansion is only supported in the ALL, ANY, IN and SOME operators');
+									}
+									
+									$param = $params[ $paramName ];
+									$elementCount = count($param);
+									
+									array_push($parsedParams, ...$param);
+									
+									$parsedParams[0] .= str_repeat($query{$i + 1}, $elementCount);
+									
+									$query = substr_replace($query, implode(',', array_fill(0, $elementCount, '?')), $i, 3 + strlen($paramName));
+									$queryLength += $elementCount * 2 - 3;
+								} else {
+									$parsedParams[0] .= ($query{$i + 1} === 'f' ? 'd' : $query{$i + 1});
+									$parsedParams[]  = $params[ $paramName ];
+									
+									$query       = substr_replace($query, '?', $i, 3 + strlen($paramName));
+									$queryLength -= 2 + strlen($paramName);
 								}
-								
-								$parsedParams[0] .= ($query{$i + 1} === 'f' ? 'd' : $query{$i + 1});
-								$parsedParams[]  = $params[ $paramName ];
-								
-								$query = substr_replace($query, '?', $i, 3 + strlen($paramName));
-								$queryLength -= 2 + strlen($paramName);
 							} elseif ($i + 2 === $queryLength || false === stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query{$i + 2})) { // look ahead: is this a non-named parameter?
 								if ($usedNamedParameters) {
 									throw new InvalidArgumentException('Mixed named and indexed parameters not supported, please use one or the other');
@@ -442,7 +454,6 @@ class DbHandler implements iDbHandler
 									
 									$query = substr_replace($query, implode(',', array_fill(0, $elementCount, '?')), $i, 2);
 									$queryLength += $elementCount * 2 - 3;
-									
 								} else {
 									$parsedParams[0] .= ($query{$i + 1} === 'f' ? 'd' : $query{$i + 1});
 									$query = substr_replace($query, '?', $i, 2);
@@ -458,7 +469,7 @@ class DbHandler implements iDbHandler
 			}
 		}
 		
-		// add check to see if there are any non-used parameters?
+		// Add check to see if there are any non-used parameters?
 		
 		return [
 			$query,

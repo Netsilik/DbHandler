@@ -14,8 +14,9 @@
     ],
     "require": {
         "php": "^7.3",
-        "ext-mysqli": "*"
-    },
+        "ext-mysqli": "*",
+		"ext-http": "*"
+	},
     "require-dev": {
         "netsilik/d": "^1.0",
         "phpunit/phpunit": "^8.2"

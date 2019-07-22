@@ -30,7 +30,7 @@ class RawQueryTest extends BaseTestCase
 		self::setInaccessibleProperty($dbHandler, '_connection', $mMysqli);
 		
 		self::expectException(Exception::class);
-		self::expectExceptionMessage('query failed:  ()');
+		self::expectExceptionMessage('query failed: ' . null . ' (' . null . ')');
 		
 		$dbHandler->rawQuery('SELECT `id` FROM `table`');
     }

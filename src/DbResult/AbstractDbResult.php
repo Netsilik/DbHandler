@@ -3,10 +3,11 @@ namespace Netsilik\DbHandler\DbResult;
 
 /**
  * @package DbHandler
- * @copyright (c) 2011-2016 Netsilik (http://netsilik.nl)
+ * @copyright (c) 2011-2019 Netsilik (http://netsilik.nl)
  * @license EUPL-1.1 (European Union Public Licence, v1.1)
  */
 
+use Netsilik\DbHandler\Interfaces\iDbResult;
 
 
 /**
@@ -20,7 +21,7 @@ abstract class AbstractDbResult implements iDbResult {
 	protected $_queryTime = 0;
 	
 	/**
-	 * @var array $_result The bound record as fieldname => value pairs; modified by reference
+	 * @var array $_result The bound record as field-name => value pairs; modified by reference
 	 */
 	protected $_result = null;
 	
@@ -46,7 +47,7 @@ abstract class AbstractDbResult implements iDbResult {
 	/**
 	 * @inheritDoc
 	 */
-	public function fetchField($field = null, $recordNum = 0)
+	public function fetchField($field = null, int $recordNum = 0)
 	{
 		$records = $this->fetch();
 		if (null === $field) {
@@ -90,10 +91,10 @@ abstract class AbstractDbResult implements iDbResult {
 			for ($i = 0; $i < $recordCount; $i++) {
 			
 				if ($i == 0) {
-					$fieldnames = array_keys($records[0]);
+					$fieldNames = array_keys($records[0]);
 					echo "\t<tr>\n";
-					foreach ($fieldnames as $fieldname) {
-						echo "\t\t<th>".$fieldname."</th>\n";
+					foreach ($fieldNames as $fieldName) {
+						echo "\t\t<th>".$fieldName."</th>\n";
 					}
 					echo "\t</tr>\n";
 				}

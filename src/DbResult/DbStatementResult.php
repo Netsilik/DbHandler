@@ -5,7 +5,7 @@ use mysqli_stmt;
 
 /**
  * @package DbHandler
- * @copyright (c) 2011-2016 Netsilik (http://netsilik.nl)
+ * @copyright (c) 2011-2019 Netsilik (http://netsilik.nl)
  * @license EUPL-1.1 (European Union Public Licence, v1.1)
  */
 
@@ -32,6 +32,8 @@ class DbStatementResult extends AbstractDbResult
 		
 		if ( false !== ($metaData = $statement->result_metadata()) ) {
 			$statement->store_result();
+			
+			$params = [];
 			while ($field = $metaData->fetch_field()) {
 				$params[] = &$this->_result[$field->name];
 			}
@@ -51,6 +53,7 @@ class DbStatementResult extends AbstractDbResult
 		
 		$records = array();
 		while ($this->_statement->fetch()) {
+			$column = [];
 			foreach($this->_result as $name => $value) {
 				$column[$name] = $value;
 			}

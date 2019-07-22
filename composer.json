@@ -15,12 +15,15 @@
     "require": {
         "php": "^7.3",
         "ext-mysqli": "*"
-    },
+	},
     "require-dev": {
         "netsilik/d": "^1.0",
-        "phpunit/phpunit": "5.4.*"
+        "phpunit/phpunit": "^8.2"
     },
     "autoload": {
-        "psr-4": { "Netsilik\\DbHandler\\": "src/" }
+        "psr-4": {
+            "Netsilik\\DbHandler\\": "src/",
+            "Tests\\": "tests/"
+        }
     }
 }

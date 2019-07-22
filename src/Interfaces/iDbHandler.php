@@ -1,14 +1,13 @@
 <?php
-namespace Netsilik\DbHandler;
+namespace Netsilik\DbHandler\Interfaces;
 
 /**
  * @package       netsilik/db-handler
- * @copyright (c) 2011-2016 Netsilik (http://netsilik.nl)
+ * @copyright (c) 2011-2019 Netsilik (http://netsilik.nl)
  * @license       EUPL-1.1 (European Union Public Licence, v1.1)
  */
 
 use mysqli;
-use Netsilik\DbHandler\DbResult\iDbResult;
 
 
 interface iDbHandler
@@ -18,6 +17,7 @@ interface iDbHandler
 	 *
 	 * @return iDbHandler $this
 	 * @throws \Exception
+	 * @throws \InvalidArgumentException
 	 */
 	public function connect() : iDbHandler;
 	
@@ -39,6 +39,7 @@ interface iDbHandler
 	 * @param string $dbName name of the database to select
 	 *
 	 * @return true on success, false otherwise
+	 * @throws \InvalidArgumentException
 	 */
 	public function selectDb(string $dbName) : bool;
 	
@@ -55,7 +56,7 @@ interface iDbHandler
 	 * @param array $params        An optional array, with values matching the parameter markers in $query
 	 * @param int $failRetryCount The number of times failed queries should be retried, for recoverable error numbers
 	 *
-	 * @return \Netsilik\DbHandler\DbResult\iDbResult An iDbResult instance with the result of the executed query
+	 * @return \Netsilik\DbHandler\Interfaces\iDbResult An iDbResult instance with the result of the executed query
 	 * @throws \Exception
 	 * @throws \InvalidArgumentException
 	 */
@@ -65,9 +66,8 @@ interface iDbHandler
 	 * Execute a query, as is. Please pay attention to escaping any user provides values
 	 *
 	 * @param string $query The query to execute
-	 * @param bool $multiple Indicate if the $query string contains multiple queries that should be executed
 	 *
-	 * @return \Netsilik\DbHandler\DbResult\iDbResult A iDbResult implementation
+	 * @return \Netsilik\DbHandler\Interfaces\iDbResult A iDbResult implementation
 	 * @throws \Exception
 	 */
 	public function rawQuery(string $query) : iDbResult;
@@ -92,11 +92,9 @@ interface iDbHandler
 	/**
 	 * Rollback a transaction
 	 *
-	 * @param bool $silent If false, a E_USER_NOTICE is emitted when no transaction has been started
-	 *
 	 * @return bool true on success, false on failure
 	 */
-	public function rollback($silent = false) : bool;
+	public function rollback() : bool;
 	
 	/**
 	 * Commit a transaction

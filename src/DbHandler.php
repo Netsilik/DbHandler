@@ -3,7 +3,7 @@ namespace Netsilik\DbHandler;
 
 /**
  * @package       netsilik/db-handler
- * @copyright (c) 2011-2016 Netsilik (http://netsilik.nl)
+ * @copyright (c) 2011-2019 Netsilik (http://netsilik.nl)
  * @license       EUPL-1.1 (European Union Public Licence, v1.1)
  */
 
@@ -12,8 +12,9 @@ use stdClass;
 use Exception;
 use mysqli_stmt;
 use InvalidArgumentException;
-use Netsilik\DbHandler\DbResult\iDbResult;
 use Netsilik\DbHandler\DbResult\DbRawResult;
+use Netsilik\DbHandler\Interfaces\iDbResult;
+use Netsilik\DbHandler\Interfaces\iDbHandler;
 use Netsilik\DbHandler\DbResult\DbStatementResult;
 
 
@@ -119,7 +120,7 @@ class DbHandler implements iDbHandler
 		if (null !== $this->_caCertFile) {
 			// Make sure the CA certificate file is available so that we can setup an encrypted connection
 			if (false === ($caCertFile = realpath($this->_caCertFile))) {
-				throw new Exception('CA-Certificate file could not be found');
+				throw new InvalidArgumentException('CA-Certificate file could not be found');
 			}
 			
 			$this->_connection->ssl_set(null, null, $caCertFile, null, null);
@@ -129,7 +130,7 @@ class DbHandler implements iDbHandler
 		$this->_connection->options(MYSQLI_OPT_CONNECT_TIMEOUT, self::CONNECTION_TIMEOUT);
 		
 		// Open connection
-		if (!$this->_connection->real_connect($this->_host, $this->_userName, $this->_password) || null !== $this->_connection->connect_error) {
+		if (!$this->_connection->real_connect($this->_host, $this->_userName, $this->_password) || $this->_connection->connect_errno > 0) {
 			$this->_connection = null;
 			throw new Exception('Could not connect to DB-server: ' . $this->_connection->connect_error);
 		}
@@ -152,7 +153,7 @@ class DbHandler implements iDbHandler
 	public function isConnected() : bool
 	{
 		if (!($this->_connection instanceof mysqli)) {
-			trigger_error('attempted to ping, but connection not initialized', E_USER_WARNING);
+			trigger_error('Attempted to ping, but connection not initialized', E_USER_WARNING);
 			return false;
 		}
 		
@@ -200,7 +201,7 @@ class DbHandler implements iDbHandler
 	/**
 	 * Get the information on the server and clients character set and collation settings
 	 *
-	 * @return \Netsilik\DbHandler\DbResult\iDbResult A AbstractDbResult object holding the result of the executed query
+	 * @return \Netsilik\DbHandler\interfaces\iDbResult A AbstractDbResult object holding the result of the executed query
 	 * @throws \Exception
 	 */
 	public function getCharsetAndCollationInfo() : iDbResult
@@ -213,7 +214,11 @@ class DbHandler implements iDbHandler
 	 */
 	public function selectDb(string $dbName) : bool
 	{
-		return $this->_connection->select_db($dbName);
+		if (true !== $this->_connection->select_db($dbName)) {
+			throw new InvalidArgumentException("Could not select database '" . $dbName . "'");
+		}
+		
+		return true;
 	}
 	
 	/**
@@ -223,26 +228,22 @@ class DbHandler implements iDbHandler
 	{
 		list($query, $params) = $this->_preParse(trim($query), $params);
 		
-		if (strlen($params[0]) <> count($params) - 1) {
-			throw new InvalidArgumentException((count($params) - 1) . ' parameters specified, ' . strlen($params[0]) . ' expected');
-		}
-		
 		$this->_ensureConnected();
 		
 		$statement = $this->_connection->prepare($query);
 		if (!($statement instanceof mysqli_stmt) || $statement->errno > 0) {
-			throw new Exception('Query preparation failed: ' . $this->_connection->error);
+			throw new Exception('Query preparation failed: ' . $statement->error);
 		}
 		
 		if ((strlen($params[0]) > 0 && false === call_user_func_array([$statement, 'bind_param'], $this->_referenceValues($params))) || $statement->errno > 0) {
-			throw new Exception('Parameter binding failed');
+			throw new Exception('Parameter binding failed: ' . $statement->error);
 		}
 		
 		
 		$startTime = microtime(true);
 		
 		if (!$this->_executePreparedStatement($statement, $failRetryCount)) {
-			throw new Exception('Query failed: ' . $statement->error);
+			throw new Exception('Query execution failed: ' . $statement->error);
 		}
 		
 		$executionTime = microtime(true) - $startTime;
@@ -259,7 +260,7 @@ class DbHandler implements iDbHandler
 		
 		$startTime = microtime(true);
 		if ( false === ($result = $this->_connection->query($query)) ) {
-			trigger_error('query failed: '.$this->_connection->error.' ('.$this->_connection->errno.')', E_USER_ERROR);
+			throw new Exception('query failed: '.$this->_connection->error.' ('.$this->_connection->errno.')');
 		}
 		$queryTime = microtime(true) - $startTime;
 		
@@ -301,9 +302,9 @@ class DbHandler implements iDbHandler
 	/**
 	 * {@inheritDoc}
 	 */
-	public function rollback($silent = false) : bool
+	public function rollback() : bool
 	{
-		if (!$silent && !$this->_inTransaction) {
+		if (!$this->_inTransaction) {
 			trigger_error('No transaction started', E_USER_NOTICE);
 			
 			return false;
@@ -371,12 +372,11 @@ class DbHandler implements iDbHandler
 	 */
 	private function _preParse(string $query, array $params) : array
 	{
-		$s = $d = false; // quoted string quote type
-		$queryLength = strlen($query);
-		
+		$s = $d = $b = false; // quoted string quote type (single, double, backtick)
 		$usedNamedParameters   = false;
 		$usesIndexedParameters = false;
 		
+		$queryLength = strlen($query);
 		$parsedParams = ['']; // first element is the token string
 		for ($i = 0; $i < $queryLength; $i++) {
 			switch ($query{$i}) {
@@ -384,15 +384,18 @@ class DbHandler implements iDbHandler
 					$i++;
 					break;
 				case '\'':
-					if (!$d) { $s = !$s; }
+					if (!$d && !$b) { $s = !$s; }
 					break;
 				case '"':
-					if (!$s) { $d = !$d; }
+					if (!$s && !$b) { $d = !$d; }
+					break;
+				case '`':
+					if (!$s && !$d) { $b = !$b; }
 					break;
 				case '%':
-					if (!$s && !$d && $i + 1 < $queryLength) {
-						if (false !== strpos('ifsb', $query{$i + 1})) { // look ahead: can we find a valid parameter type indicator
-							if ($i + 2 < $queryLength && $query{$i + 2} === ':') { // look ahead: can we find the named parameter indicator
+					if (!$s && !$d && !$b) { // Not in a quoted string
+						if ($i + 1 < $queryLength && false !== strpos('ifsb', $query{$i + 1})) { // look ahead: can we find a valid parameter type indicator?
+							if ($i + 3 < $queryLength && $query{$i + 2} === ':' && false !== stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query{$i + 3})) { // look ahead: is this a named parameter?
 								if ($usesIndexedParameters) {
 									throw new InvalidArgumentException('Mixed indexed and named parameters not supported, please use one or the other');
 								}
@@ -404,18 +407,30 @@ class DbHandler implements iDbHandler
 								}
 								
 								if (!isset($params[ $paramName ])) {
-									throw new InvalidArgumentException('Named parameter ' . $paramName . ' not found');
+									throw new InvalidArgumentException("Named parameter '" . $paramName . "' not found");
 								}
 								if (is_array($params[ $paramName ])) {
-									throw new InvalidArgumentException('Array parameter expansion is not supported for named parameters');
+									if (1 !== preg_match('/(ALL|ANY|IN|SOME)\s*\(\s*$/i', substr($query, 0, $i))) { // look behind: are we in an ALL, ANY, IN or SOME clause?
+										throw new InvalidArgumentException('Array parameter expansion is only supported in the ALL, ANY, IN and SOME operators');
+									}
+									
+									$param = $params[ $paramName ];
+									$elementCount = count($param);
+									
+									array_push($parsedParams, ...$param);
+									
+									$parsedParams[0] .= str_repeat($query{$i + 1}, $elementCount);
+									
+									$query = substr_replace($query, implode(',', array_fill(0, $elementCount, '?')), $i, 3 + strlen($paramName));
+									$queryLength += $elementCount * 2 - 3;
+								} else {
+									$parsedParams[0] .= ($query{$i + 1} === 'f' ? 'd' : $query{$i + 1});
+									$parsedParams[]  = $params[ $paramName ];
+									
+									$query       = substr_replace($query, '?', $i, 3 + strlen($paramName));
+									$queryLength -= 2 + strlen($paramName);
 								}
-								
-								$parsedParams[0] .= ($query{$i + 1} === 'f' ? 'd' : $query{$i + 1});
-								$parsedParams[]  = $params[ $paramName ];
-								
-								$query = substr_replace($query, '?', $i, 3 + strlen($paramName));
-								$queryLength -= 2 + strlen($paramName);
-							} else { // This is a non-named parameter
+							} elseif ($i + 2 === $queryLength || false === stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query{$i + 2})) { // look ahead: is this a non-named parameter?
 								if ($usedNamedParameters) {
 									throw new InvalidArgumentException('Mixed named and indexed parameters not supported, please use one or the other');
 								}
@@ -426,7 +441,7 @@ class DbHandler implements iDbHandler
 								$usesIndexedParameters = true;
 								
 								if (is_array($params[0])) {
-									if (1 !== preg_match('/(ALL|ANY|IN|SOME)\s*\(\s*$/i', substr($query, 0, $i))) { // look behind: are we in an IN clause?
+									if (1 !== preg_match('/(ALL|ANY|IN|SOME)\s*\(\s*$/i', substr($query, 0, $i))) { // look behind: are we in an ALL, ANY, IN or SOME clause?
 										throw new InvalidArgumentException('Array parameter expansion is only supported in the ALL, ANY, IN and SOME operators');
 									}
 									
@@ -439,7 +454,6 @@ class DbHandler implements iDbHandler
 									
 									$query = substr_replace($query, implode(',', array_fill(0, $elementCount, '?')), $i, 2);
 									$queryLength += $elementCount * 2 - 3;
-									
 								} else {
 									$parsedParams[0] .= ($query{$i + 1} === 'f' ? 'd' : $query{$i + 1});
 									$query = substr_replace($query, '?', $i, 2);
@@ -454,6 +468,8 @@ class DbHandler implements iDbHandler
 				//	case: check for the various comment start chars (not implemented yet)
 			}
 		}
+		
+		// Check for unused parameters?
 		
 		return [
 			$query,

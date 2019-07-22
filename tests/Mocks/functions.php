@@ -6,6 +6,8 @@
  * @license       EUPL-1.1 (European Union Public Licence, v1.1)
  */
 
+// Note: we *might* be able to automagically create named functions at runtime (see: https://stackoverflow.com/a/39127886) but it would be scary code.
+
 namespace Netsilik\DbHandler
 {
 	use Tests\Mocks\FunctionOverwrites;

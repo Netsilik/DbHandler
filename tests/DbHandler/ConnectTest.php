@@ -21,11 +21,9 @@ class ConnectTest extends BaseTestCase
 {
     public function test_whenAllGoesWell_thenThisReturned()
     {
-		$mMysqli_result = self::createMock(mysqli_result::class);
-		
 		$mMysqli_stmt = self::createMock(mysqli_stmt::class);
 		$mMysqli_stmt->method('execute')->willReturn(true);
-		$mMysqli_stmt->method('result_metadata')->willReturn($mMysqli_result);
+		$mMysqli_stmt->method('result_metadata')->willReturn(false);
 		
 		$mMysqli = self::createMock(mysqli::class);
 		$mMysqli->method('real_connect')->willReturn(true);
@@ -66,11 +64,9 @@ class ConnectTest extends BaseTestCase
     
     public function test_whenValidCACertificateFileGiven_thenSslSetIsCalled()
     {
-    	$mMysqli_result = self::createMock(mysqli_result::class);
-		
 		$mMysqli_stmt = self::createMock(mysqli_stmt::class);
 		$mMysqli_stmt->method('execute')->willReturn(true);
-		$mMysqli_stmt->method('result_metadata')->willReturn($mMysqli_result);
+		$mMysqli_stmt->method('result_metadata')->willReturn(false);
 		
 		$mMysqli = self::createMock(mysqli::class);
 		$mMysqli->method('real_connect')->willReturn(true);
@@ -88,11 +84,9 @@ class ConnectTest extends BaseTestCase
     
     public function test_whenCannotConnect_thenExceptionThrown()
     {
-		$mMysqli_result = self::createMock(mysqli_result::class);
-
 		$mMysqli_stmt = self::createMock(mysqli_stmt::class);
 		$mMysqli_stmt->method('execute')->willReturn(true);
-		$mMysqli_stmt->method('result_metadata')->willReturn($mMysqli_result);
+		$mMysqli_stmt->method('result_metadata')->willReturn(false);
 
 		$mMysqli = self::createMock(mysqli::class);
 		$mMysqli->method('real_connect')->willReturn(false);
@@ -109,11 +103,9 @@ class ConnectTest extends BaseTestCase
     
     public function test_whenDatabaseSpecified_thenSelectDbIsCalled()
     {
-		$mMysqli_result = self::createMock(mysqli_result::class);
-		
 		$mMysqli_stmt = self::createMock(mysqli_stmt::class);
 		$mMysqli_stmt->method('execute')->willReturn(true);
-		$mMysqli_stmt->method('result_metadata')->willReturn($mMysqli_result);
+		$mMysqli_stmt->method('result_metadata')->willReturn(false);
 		
 		$mMysqli = self::createMock(mysqli::class);
 		$mMysqli->method('real_connect')->willReturn(true);

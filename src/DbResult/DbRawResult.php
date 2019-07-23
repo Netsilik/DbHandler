@@ -18,10 +18,10 @@ class DbRawResult extends AbstractDbResult
 	protected $_records = null;
 	
 	/**
-	 * @param object $result Either an instance of mysqli_result or an instance of StdClass
-	 * @param int $queryTime the time in seconds the statement took to execute
+	 * @param object $result    Either an instance of mysqli_result or an instance of StdClass
+	 * @param float  $queryTime The time in seconds the statement took to execute
 	 */
-	public function __construct ($result, $queryTime)
+	public function __construct (object $result, float $queryTime)
 	{
 		$this->_result = $result;
 		
@@ -35,7 +35,7 @@ class DbRawResult extends AbstractDbResult
 	{
 		if ($this->_result instanceof mysqli_result) {
 			if (null === $this->_records) {
-				$this->_records = array();
+				$this->_records = [];
 				
 				while ($record = $this->_result->fetch_assoc()) {
 					$this->_records[] = $record;
@@ -44,7 +44,7 @@ class DbRawResult extends AbstractDbResult
 			}			
 			return $this->_records;
 		}
-		return false;
+		return [];
 	}
 	
 	/**

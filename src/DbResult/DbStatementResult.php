@@ -34,7 +34,7 @@ class DbStatementResult extends AbstractDbResult
 			$statement->store_result();
 			
 			$params = [];
-			while ($field = $metaData->fetch_field()) {
+			while (false !== ($field = $metaData->fetch_field())) {
 				$params[] = &$this->_result[$field->name];
 			}
 			call_user_func_array(array($this->_statement, 'bind_result'), $params);
@@ -47,11 +47,11 @@ class DbStatementResult extends AbstractDbResult
 	 */
 	public function fetch()
 	{
-		if (is_null($this->_result)) { // No result data available
-			return false;
+		if (null === $this->_result) { // No result data available
+			return [];
 		}
 		
-		$records = array();
+		$records = [];
 		while ($this->_statement->fetch()) {
 			$column = [];
 			foreach($this->_result as $name => $value) {
@@ -59,6 +59,7 @@ class DbStatementResult extends AbstractDbResult
 			}
 			$records[] = $column;
 		}
+		
 		$this->_statement->data_seek(0);
 		return $records;
 	}

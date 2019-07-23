@@ -478,6 +478,8 @@ class DbHandler implements iDbHandler
 	}
 	
 	/**
+	 * @codeCoverageIgnore This function can, unfortunately, not be tested at this time, because of https://bugs.php.net/bug.php?id=63591
+	 *
 	 * @param \mysqli_stmt $statement
 	 * @param int          $failRetryCount
 	 *

@@ -20,9 +20,9 @@ interface iDbResult
 	/**
 	 * Fetch a column from a SELECT statement result
 	 *
-	 * @param int $column optional name of the column to fetch
+	 * @param int $column The Optional name of the column to fetch
 	 *
-	 * @return array an indexed array containing all fields for specified column or the first column if none specified
+	 * @return array An indexed array containing all fields for specified column or the first column if none specified
 	 */
 	public function fetchColumn(string $column = null) : array;
 	

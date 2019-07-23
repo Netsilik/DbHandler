@@ -103,7 +103,7 @@ abstract class AbstractDbResult implements iDbResult {
 				echo "\t<tr>\n";
 				foreach ($records[$i] as $field) {
 					echo "\t\t<td" . (is_numeric($field) ? ' align="right"': '') . '>';
-					echo (is_null($field)) ? '<em>NULL</em>' : htmlspecialchars($field, ENT_NOQUOTES);
+					echo (null === $field) ? '<em>NULL</em>' : htmlspecialchars($field, ENT_NOQUOTES);
 					echo "</td>\n";
 				}
 				echo "\t</tr>\n";

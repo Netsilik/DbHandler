@@ -47,8 +47,8 @@ class DbStatementResult extends AbstractDbResult
 	 */
 	public function fetch()
 	{
-		if (is_null($this->_result)) { // No result data available
-			return false;
+		if (null === $this->_result) { // No result data available
+			return [];
 		}
 		
 		$records = [];

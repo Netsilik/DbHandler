@@ -401,66 +401,14 @@ class DbHandler implements iDbHandler
 								}
 								$usedNamedParameters = true;
 								
-								$paramName = '';
-								for ($j = $i + 3; false !== stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query{$j}); $j++) { // TODO: check query length
-									$paramName .= $query{$j};
-								}
-								
-								if (!isset($params[ $paramName ])) {
-									throw new InvalidArgumentException("Named parameter '" . $paramName . "' not found");
-								}
-								if (is_array($params[ $paramName ])) {
-									if (1 !== preg_match('/(ALL|ANY|IN|SOME)\s*\(\s*$/i', substr($query, 0, $i))) { // look behind: are we in an ALL, ANY, IN or SOME clause?
-										throw new InvalidArgumentException('Array parameter expansion is only supported in the ALL, ANY, IN and SOME operators');
-									}
-									
-									$param = $params[ $paramName ];
-									$elementCount = count($param);
-									
-									array_push($parsedParams, ...$param);
-									
-									$parsedParams[0] .= str_repeat($query{$i + 1}, $elementCount);
-									
-									$query = substr_replace($query, implode(',', array_fill(0, $elementCount, '?')), $i, 3 + strlen($paramName));
-									$queryLength += $elementCount * 2 - 3;
-								} else {
-									$parsedParams[0] .= ($query{$i + 1} === 'f' ? 'd' : $query{$i + 1});
-									$parsedParams[]  = $params[ $paramName ];
-									
-									$query       = substr_replace($query, '?', $i, 3 + strlen($paramName));
-									$queryLength -= 2 + strlen($paramName);
-								}
+								list($query, $params, $queryLength, $parsedParams) = $this->_preParse_namedParam($i, $query, $params, $queryLength, $parsedParams);
 							} elseif ($i + 2 === $queryLength || false === stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query{$i + 2})) { // look ahead: is this a non-named parameter?
 								if ($usedNamedParameters) {
 									throw new InvalidArgumentException('Mixed named and indexed parameters not supported, please use one or the other');
 								}
-								if (count($params) === 0) {
-									throw new InvalidArgumentException('The number of parameters is not equal to the number of placeholders');
-								}
-								
 								$usesIndexedParameters = true;
 								
-								if (is_array($params[0])) {
-									if (1 !== preg_match('/(ALL|ANY|IN|SOME)\s*\(\s*$/i', substr($query, 0, $i))) { // look behind: are we in an ALL, ANY, IN or SOME clause?
-										throw new InvalidArgumentException('Array parameter expansion is only supported in the ALL, ANY, IN and SOME operators');
-									}
-									
-									$param = array_shift($params);
-									$elementCount = count($param);
-									
-									array_push($parsedParams, ...$param);
-									
-									$parsedParams[0] .= str_repeat($query{$i + 1}, $elementCount);
-									
-									$query = substr_replace($query, implode(',', array_fill(0, $elementCount, '?')), $i, 2);
-									$queryLength += $elementCount * 2 - 3;
-								} else {
-									$parsedParams[0] .= ($query{$i + 1} === 'f' ? 'd' : $query{$i + 1});
-									$query = substr_replace($query, '?', $i, 2);
-									$queryLength--;
-									
-									$parsedParams[] = array_shift($params);
-								}
+								list($query, $params, $queryLength, $parsedParams) = $this->_preParse_indexedParam($i, $query, $params, $queryLength, $parsedParams);
 							}
 						}
 					}
@@ -475,6 +423,92 @@ class DbHandler implements iDbHandler
 			$query,
 			$parsedParams,
 		];
+	}
+	
+	/**
+	 * @param int    $i
+	 * @param string $query
+	 * @param array  $params
+	 * @param int    $queryLength
+	 * @param array  $parsedParams
+	 *
+	 * @return array [$query, $params, $queryLength, $parsedParams]
+	 * @throws \InvalidArgumentException
+	 */
+	private function _preParse_namedParam(int $i, string $query, array $params, int $queryLength, array $parsedParams) : array
+	{
+		$paramName = '';
+		for ($j = $i + 3; false !== stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query{$j}); $j++) {
+			$paramName .= $query{$j};
+		}
+		
+		if (!isset($params[ $paramName ])) {
+			throw new InvalidArgumentException("Named parameter '" . $paramName . "' not found");
+		}
+		if (is_array($params[ $paramName ])) {
+			if (1 !== preg_match('/(ALL|ANY|IN|SOME)\s*\(\s*$/i', substr($query, 0, $i))) { // look behind: are we in an ALL, ANY, IN or SOME clause?
+				throw new InvalidArgumentException('Array parameter expansion is only supported in the ALL, ANY, IN and SOME operators');
+			}
+			
+			$param        = $params[ $paramName ];
+			$elementCount = count($param);
+			
+			array_push($parsedParams, ...$param);
+			
+			$parsedParams[0] .= str_repeat($query{$i + 1}, $elementCount);
+			
+			$query       = substr_replace($query, implode(',', array_fill(0, $elementCount, '?')), $i, 3 + strlen($paramName));
+			$queryLength += $elementCount * 2 - 3;
+		} else {
+			$parsedParams[0] .= ($query{$i + 1} === 'f' ? 'd' : $query{$i + 1});
+			$parsedParams[]  = $params[ $paramName ];
+			
+			$query       = substr_replace($query, '?', $i, 3 + strlen($paramName));
+			$queryLength -= 2 + strlen($paramName);
+		}
+		
+		return [$query, $params, $queryLength, $parsedParams];
+	}
+	
+	/**
+	 * @param int    $i
+	 * @param string $query
+	 * @param array  $params
+	 * @param int    $queryLength
+	 * @param array  $parsedParams
+	 *
+	 * @return array [$query, $params, $queryLength, $parsedParams]
+	 * @throws \InvalidArgumentException
+	 */
+	private function _preParse_indexedParam(int $i, string $query, array $params, int $queryLength, array $parsedParams) : array
+	{
+		if (count($params) === 0) {
+			throw new InvalidArgumentException('The number of parameters is not equal to the number of placeholders');
+		}
+		
+		if (is_array($params[0])) {
+			if (1 !== preg_match('/(ALL|ANY|IN|SOME)\s*\(\s*$/i', substr($query, 0, $i))) { // look behind: are we in an ALL, ANY, IN or SOME clause?
+				throw new InvalidArgumentException('Array parameter expansion is only supported in the ALL, ANY, IN and SOME operators');
+			}
+			
+			$param        = array_shift($params);
+			$elementCount = count($param);
+			
+			array_push($parsedParams, ...$param);
+			
+			$parsedParams[0] .= str_repeat($query{$i + 1}, $elementCount);
+			
+			$query       = substr_replace($query, implode(',', array_fill(0, $elementCount, '?')), $i, 2);
+			$queryLength += $elementCount * 2 - 3;
+		} else {
+			$parsedParams[0] .= ($query{$i + 1} === 'f' ? 'd' : $query{$i + 1});
+			$query           = substr_replace($query, '?', $i, 2);
+			$queryLength--;
+			
+			$parsedParams[] = array_shift($params);
+		}
+		
+		return [$query, $params, $queryLength, $parsedParams];
 	}
 	
 	/**

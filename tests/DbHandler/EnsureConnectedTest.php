@@ -19,11 +19,9 @@ class EnsureConnectedTest extends BaseTestCase
 {
     public function test_whenNotConnected_thenNoticeTriggered()
     {
-		$mMysqli_result = self::createMock(mysqli_result::class);
-		
 		$mMysqli_stmt = self::createMock(mysqli_stmt::class);
 		$mMysqli_stmt->method('execute')->willReturn(true);
-		$mMysqli_stmt->method('result_metadata')->willReturn($mMysqli_result);
+		$mMysqli_stmt->method('result_metadata')->willReturn(false);
 		
 		$mMysqli = self::createMock(mysqli::class);
 		$mMysqli->method('real_connect')->willReturn(true);

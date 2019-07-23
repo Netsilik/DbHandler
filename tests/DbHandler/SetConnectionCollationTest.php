@@ -18,11 +18,9 @@ class SetConnectionCollationTest extends BaseTestCase
 {
     public function test_whenMethodCalled_thenQueryExecutedAndSelfReturned()
     {
-    	$mMysqli_result = self::createMock(mysqli_result::class);
-		
-		$mMysqli_stmt = self::createMock(mysqli_stmt::class);
+    	$mMysqli_stmt = self::createMock(mysqli_stmt::class);
 		$mMysqli_stmt->method('execute')->willReturn(true);
-		$mMysqli_stmt->method('result_metadata')->willReturn($mMysqli_result);
+		$mMysqli_stmt->method('result_metadata')->willReturn(false);
 		
 		$mMysqli = self::createMock(mysqli::class);
 		$mMysqli->method('ping')->willReturn(true);

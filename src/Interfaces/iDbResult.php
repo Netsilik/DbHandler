@@ -13,7 +13,7 @@ interface iDbResult
 	/**
 	 * Fetch the results for an SELECT statement
 	 *
-	 * @return array an associative array per record, containing all fields (columns)
+	 * @return array An associative array per record, containing all fields (columns)
 	 */
 	public function fetch();
 	

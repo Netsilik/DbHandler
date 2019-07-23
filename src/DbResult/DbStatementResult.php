@@ -34,7 +34,7 @@ class DbStatementResult extends AbstractDbResult
 			$statement->store_result();
 			
 			$params = [];
-			while ($field = $metaData->fetch_field()) {
+			while (false !== ($field = $metaData->fetch_field())) {
 				$params[] = &$this->_result[$field->name];
 			}
 			call_user_func_array(array($this->_statement, 'bind_result'), $params);
@@ -59,6 +59,7 @@ class DbStatementResult extends AbstractDbResult
 			}
 			$records[] = $column;
 		}
+		
 		$this->_statement->data_seek(0);
 		return $records;
 	}

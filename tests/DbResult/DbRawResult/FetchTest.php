@@ -1,5 +1,5 @@
 <?php
-namespace Tests\DbResult\AbstractDbResult;
+namespace Tests\DbResult\DbRawResult;
 
 /**
  * @package       netsilik/db-handler
@@ -7,6 +7,7 @@ namespace Tests\DbResult\AbstractDbResult;
  * @license       EUPL-1.1 (European Union Public Licence, v1.1)
  */
 
+use stdClass;
 use mysqli_result;
 use Tests\BaseTestCase;
 use Netsilik\DbHandler\DbResult\DbRawResult;
@@ -16,7 +17,7 @@ class FetchTest extends BaseTestCase
 {
     public function test_whenStdClassGivenToConstructor_thenEmptyArrayReturned()
     {
-		$dbResult = new DbRawResult(new \stdClass(), 0.0);
+		$dbResult = new DbRawResult(new stdClass(), 0.0);
 		$result = $dbResult->fetch();
 		
 		self::assertEmpty($result);

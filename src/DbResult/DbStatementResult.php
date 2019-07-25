@@ -45,7 +45,7 @@ class DbStatementResult extends AbstractDbResult
 	/**
 	 * {@inheritDoc}
 	 */
-	public function fetch()
+	public function fetch() : array
 	{
 		if (null === $this->_result) { // No result data available
 			return [];
@@ -67,7 +67,7 @@ class DbStatementResult extends AbstractDbResult
 	/**
 	 * {@inheritDoc}
 	 */
-	public function getAffectedRecords()
+	public function getAffectedRecords() : int
 	{
 		return $this->_statement->affected_rows;
 	}
@@ -75,7 +75,7 @@ class DbStatementResult extends AbstractDbResult
 	/**
 	 * {@inheritDoc}
 	 */
-	public function getFieldCount()
+	public function getFieldCount() : int
 	{
 		return $this->_statement->field_count;
 	}
@@ -83,7 +83,7 @@ class DbStatementResult extends AbstractDbResult
 	/**
 	 * {@inheritDoc}
 	 */
-	public function getInsertedId()
+	public function getInsertedId() : int
 	{
 		return $this->_statement->insert_id;
 	}
@@ -91,7 +91,7 @@ class DbStatementResult extends AbstractDbResult
 	/**
 	 * {@inheritDoc}
 	 */
-	public function getRecordCount()
+	public function getRecordCount() : int
 	{
 		return $this->_statement->num_rows;
 	}

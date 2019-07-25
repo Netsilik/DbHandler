@@ -59,10 +59,10 @@ abstract class AbstractDbResult implements iDbResult {
 	/**
 	 * @inheritDoc
 	 */
-	public function fetchRecord(int $recordNum = 0) : array
+	public function fetchRecord(int $recordNum = 0) : ?array
 	{
 		$records = $this->fetch();
-		return isset($records[$recordNum]) ? $records[$recordNum] : [];
+		return isset($records[$recordNum]) ? $records[$recordNum] : null;
 	}
 	
 	/**

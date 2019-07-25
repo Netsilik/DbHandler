@@ -31,7 +31,7 @@ class DbRawResult extends AbstractDbResult
 	/**
 	 * {@inheritDoc}
 	 */
-	public function fetch()
+	public function fetch() : array
 	{
 		if ($this->_result instanceof mysqli_result) {
 			if (null === $this->_records) {
@@ -50,7 +50,7 @@ class DbRawResult extends AbstractDbResult
 	/**
 	 * {@inheritDoc}
 	 */
-	public function getAffectedRecords()
+	public function getAffectedRecords() : int
 	{
 		if (isset($this->_result->affected_rows)) {
 			return $this->_result->affected_rows;
@@ -61,7 +61,7 @@ class DbRawResult extends AbstractDbResult
 	/**
 	 * {@inheritDoc}
 	 */
-	public function getFieldCount()
+	public function getFieldCount() : int
 	{
 		if (isset($this->_result->field_count)) {
 			return $this->_result->field_count;
@@ -72,7 +72,7 @@ class DbRawResult extends AbstractDbResult
 	/**
 	 * {@inheritDoc}
 	 */
-	public function getInsertedId()
+	public function getInsertedId() : int
 	{
 		if (isset($this->_result->insert_id)) {
 			return $this->_result->insert_id;
@@ -83,7 +83,7 @@ class DbRawResult extends AbstractDbResult
 	/**
 	 * {@inheritDoc}
 	 */
-	public function getRecordCount()
+	public function getRecordCount() : int
 	{
 		if (isset($this->_result->num_rows)) {
 			return $this->_result->num_rows;

@@ -25,27 +25,27 @@ class AbstractDbResultTestWrapper extends AbstractDbResult
 	/**
 	 * {@inheritDoc}
 	 */
-	public function fetch()
+	public function fetch() : array
 	{
 		return $this->_records;
 	}
 	
-	public function getAffectedRecords()
+	public function getAffectedRecords() : int
 	{
-		// TODO: Implement getAffectedRecords() method.
+		return -1; // Not needed for testing
 	}
 	
-	public function getFieldCount()
+	public function getFieldCount() : int
 	{
-		// Not needed for testing
+		return -1; // Not needed for testing
 	}
 	
-	public function getInsertedId()
+	public function getInsertedId() : int
 	{
-		// Not needed for testing
+		return -1; // Not needed for testing
 	}
 	
-	public function getRecordCount()
+	public function getRecordCount() : int
 	{
 		return count($this->_records);
 	}

@@ -14,12 +14,10 @@ use Netsilik\DbHandler\DbHandler;
 
 class IsConnectedTest extends BaseTestCase
 {
-    public function test_whenConnectionNotInitialized_thenWarningTriggeredAndFalseReturned()
+    public function test_whenConnectionNotInitialized_thenFalseReturned()
     {
 		$dbHandler = new DbHandler('localhost', 'root', 'secret');
 		$result = $dbHandler->isConnected();
-		
-		self::assertErrorTriggered(E_USER_WARNING, 'Attempted to ping, but connection not initialized');
 		
 		self::assertFalse($result);
 	}

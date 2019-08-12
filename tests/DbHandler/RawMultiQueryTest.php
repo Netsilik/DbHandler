@@ -30,7 +30,7 @@ class RawMultiQueryTest extends BaseTestCase
 		self::setInaccessibleProperty($dbHandler, '_connection', $mMysqli);
 		
 		self::expectException(Exception::class);
-		self::expectExceptionMessage('first query failed: ' . null . ' (' . null . ')');
+		self::expectExceptionMessage('first query failed: (' . null . ') ' . null);
 		
 		$dbHandler->rawMultiQuery('SELECT `id` FROM `table`;SELECT `id` FROM `otherTable`;');
     }

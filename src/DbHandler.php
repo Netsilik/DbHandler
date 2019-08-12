@@ -275,6 +275,37 @@ class DbHandler implements iDbHandler
 	/**
 	 * {@inheritDoc}
 	 */
+	public function rawMultiQuery(string $query) : array
+	{
+		$startTime = microtime(true);
+		if (false === $this->_connection->multi_query($query)) {
+			throw new Exception('first query failed: ' . $this->_connection->error . ' (' . $this->_connection->errno . ')');
+		}
+		$queryTime = microtime(true) - $startTime;
+		
+		$n = 0;
+		$records = [];
+		do {
+			if ($this->_connection->errno > 0) {
+				throw new Exception('query ' . $n . ' failed: ' . $this->_connection->error . ' (' . $this->_connection->errno . ')');
+			}
+			
+			if (false === ($result = $this->_connection->store_result())) {
+				$result = new StdClass();
+				$result->insert_id     = $this->_connection->insert_id;
+				$result->affected_rows = $this->_connection->affected_rows;
+			}
+			$records[ $n ] = new DbRawResult($result, $queryTime);
+			
+			$n++;
+		} while ($this->_connection->more_results() && $this->_connection->next_result());
+		
+		return $records;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
 	public function escape(string $value) : string
 	{
 		$this->_ensureConnected();

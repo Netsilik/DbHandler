@@ -73,6 +73,18 @@ interface iDbHandler
 	public function rawQuery(string $query) : iDbResult;
 	
 	/**
+	 * Execute multiple query, as they appear in the query string, on after another.
+	 * Please be exceptionally careful with this method: it is a power user function. Any mistake with user provided values will put a
+	 * very powerful interface in the hands of the would-be attacker.
+	 *
+	 * @param string $query The query to execute
+	 *
+	 * @return array An indexed array of \Netsilik\DbHandler\Interfaces\iDbResult result sets
+	 * @throws \Exception
+	 */
+	public function rawMultiQuery(string $query) : array;
+	
+	/**
 	 * Escapes special characters in a string for use in an SQL statement, taking into account the current charset of the connection.
 	 *
 	 * @param string $value

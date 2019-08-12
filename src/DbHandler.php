@@ -132,7 +132,7 @@ class DbHandler implements iDbHandler
 		// Open connection
 		if (!$this->_connection->real_connect($this->_host, $this->_userName, $this->_password) || $this->_connection->connect_errno > 0) {
 			$this->_connection = null;
-			throw new Exception('Could not connect to DB-server: ' . $this->_connection->connect_error);
+			throw new Exception('Could not connect to DB-server: (' . $this->_connection->connect_errno . ') ' . $this->_connection->connect_error);
 		}
 		
 		// Make sure the connection character set and collation matches our expectation
@@ -231,18 +231,18 @@ class DbHandler implements iDbHandler
 		
 		$statement = $this->_connection->prepare($query);
 		if (!($statement instanceof mysqli_stmt) || $statement->errno > 0) {
-			throw new Exception('Query preparation failed: ' . $statement->error);
+			throw new Exception('Query preparation failed: (' . $this->_connection->errno . ') ' . $this->_connection->error);
 		}
 		
 		if ((strlen($params[0]) > 0 && false === call_user_func_array([$statement, 'bind_param'], $this->_referenceValues($params))) || $statement->errno > 0) {
-			throw new Exception('Parameter binding failed: ' . $statement->error);
+			throw new Exception('Parameter binding failed: (' . $statement->errno . ') ' . $statement->error);
 		}
 		
 		
 		$startTime = microtime(true);
 		
 		if (!$this->_executePreparedStatement($statement, $failRetryCount)) {
-			throw new Exception('Query execution failed: ' . $statement->error);
+			throw new Exception('Query execution failed: (' . $statement->errno . ') ' . $statement->error);
 		}
 		
 		$executionTime = microtime(true) - $startTime;
@@ -259,7 +259,7 @@ class DbHandler implements iDbHandler
 		
 		$startTime = microtime(true);
 		if ( false === ($result = $this->_connection->query($query)) ) {
-			throw new Exception('query failed: '.$this->_connection->error.' ('.$this->_connection->errno.')');
+			throw new Exception('query failed: (' . $this->_connection->errno . ') ' . $this->_connection->error);
 		}
 		$queryTime = microtime(true) - $startTime;
 		
@@ -279,7 +279,7 @@ class DbHandler implements iDbHandler
 	{
 		$startTime = microtime(true);
 		if (false === $this->_connection->multi_query($query)) {
-			throw new Exception('first query failed: ' . $this->_connection->error . ' (' . $this->_connection->errno . ')');
+			throw new Exception('first query failed: (' . $this->_connection->errno . ') ' . $this->_connection->error);
 		}
 		$queryTime = microtime(true) - $startTime;
 		
@@ -287,7 +287,7 @@ class DbHandler implements iDbHandler
 		$records = [];
 		do {
 			if ($this->_connection->errno > 0) {
-				throw new Exception('query ' . $n . ' failed: ' . $this->_connection->error . ' (' . $this->_connection->errno . ')');
+				throw new Exception('query ' . $n . ' failed: (' . $this->_connection->errno . ') ' . $this->_connection->error);
 			}
 			
 			if (false === ($result = $this->_connection->store_result())) {

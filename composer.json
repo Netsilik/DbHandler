@@ -18,7 +18,8 @@
 	},
     "require-dev": {
         "netsilik/d": "^1.0",
-        "phpunit/phpunit": "^8.2"
+        "phpunit/phpunit": "^8.2",
+		"netsilik/base-test-case": "^0.9"
     },
     "autoload": {
         "psr-4": {

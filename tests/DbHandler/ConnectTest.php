@@ -14,7 +14,7 @@ use mysqli_result;
 use Tests\BaseTestCase;
 use InvalidArgumentException;
 use Netsilik\DbHandler\DbHandler;
-use Tests\Mocks\FunctionOverwrites;
+use Netsilik\Testing\Helpers\FunctionOverwrites;
 
 
 class ConnectTest extends BaseTestCase

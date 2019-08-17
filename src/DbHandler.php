@@ -131,8 +131,10 @@ class DbHandler implements iDbHandler
 		
 		// Open connection
 		if (!$this->_connection->real_connect($this->_host, $this->_userName, $this->_password) || $this->_connection->connect_errno > 0) {
+			$connectErrno = $this->_connection->connect_errno;
+			$connectError = $this->_connection->connect_error;
 			$this->_connection = null;
-			throw new Exception('Could not connect to DB-server: (' . $this->_connection->connect_errno . ') ' . $this->_connection->connect_error);
+			throw new Exception('Could not connect to DB-server: (' . $connectErrno . ') ' . $connectError);
 		}
 		
 		// Make sure the connection character set and collation matches our expectation

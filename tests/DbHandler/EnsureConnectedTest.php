@@ -9,10 +9,8 @@ namespace Tests\DbHandler;
 
 use mysqli;
 use Exception;
-use mysqli_stmt;
 use Tests\BaseTestCase;
 use Netsilik\DbHandler\DbHandler;
-use Netsilik\Testing\Helpers\FunctionOverwrites;
 
 
 class EnsureConnectedTest extends BaseTestCase

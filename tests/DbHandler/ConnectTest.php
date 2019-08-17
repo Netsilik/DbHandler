@@ -10,7 +10,6 @@ namespace Tests\DbHandler;
 use mysqli;
 use Exception;
 use mysqli_stmt;
-use mysqli_result;
 use Tests\BaseTestCase;
 use InvalidArgumentException;
 use Netsilik\DbHandler\DbHandler;

@@ -2,12 +2,11 @@
 namespace Tests;
 
 /**
- * @package       netsilik/db-handler
- * @copyright (c) 2011-2016 Netsilik (http://netsilik.nl)
+ * @copyright (c) Scepino (http://scepino.com)
  * @license       EUPL-1.1 (European Union Public Licence, v1.1)
  */
 
-use Netsilik\Testing\BaseTestCase AS NetsilikBaseTestCase;
+use Netsilik\Testing\BaseTestCase as NetsilikBaseTestCase;
 
 
 abstract class BaseTestCase extends NetsilikBaseTestCase

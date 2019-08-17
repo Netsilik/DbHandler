@@ -5,6 +5,7 @@
 		beStrictAboutOutputDuringTests="false"
 		beStrictAboutTestsThatDoNotTestAnything="true"
 		bootstrap="tests/bootstrap.php"
+		cacheResultFile="./cache/.phpunit.result.cache"
 		colors="true"
 		convertErrorsToExceptions="true"
 		convertNoticesToExceptions="false"
@@ -15,17 +16,20 @@
 		stderr="true"
 		verbose="true"
 	>
+	
 	<testsuites>
 		<testsuite name="tests">
 			<directory>tests</directory>
 		</testsuite>
 	</testsuites>
+	
 	<filter>
 		<whitelist processUncoveredFilesFromWhitelist="true">
 			<directory suffix=".php">src</directory>
 		</whitelist>
 	</filter>
+	
 	<logging>
-		<log type="coverage-html" target="report" lowUpperBound="65" highLowerBound="95"/>
+		<log type="coverage-html" target="report" lowUpperBound="75" highLowerBound="95"/>
 	</logging>
 </phpunit>

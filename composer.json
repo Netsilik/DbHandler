@@ -3,7 +3,7 @@
     "description": "PHP wrapper around the MySQLi Database Extensions, providing intuitive access to prepared queries.",
     "keywords": ["database", "mysql", "mariadb", "mysqli"],
     "type": "library",
-    "license": "proprietary",
+    "license": "EUPL-1.1",
 	"homepage": "https://gitlab.com/Netsilik/DbHandler",
     "authors": [
         {
@@ -17,13 +17,17 @@
         "ext-mysqli": "*"
 	},
     "require-dev": {
+		"netsilik/base-test-case": "^0.9",
         "netsilik/d": "^1.0",
-        "phpunit/phpunit": "^8.2",
-		"netsilik/base-test-case": "^0.9"
+        "phpunit/phpunit": "^8.2"
     },
     "autoload": {
         "psr-4": {
-            "Netsilik\\DbHandler\\": "src/",
+            "Netsilik\\DbHandler\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
             "Tests\\": "tests/"
         }
     }

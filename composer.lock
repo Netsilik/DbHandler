@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "32486763692476806303b4de56f85ebf",
+    "content-hash": "98f6f3787d1df4c3baf4bc91fd2fa14d",
     "packages": [],
     "packages-dev": [
         {
@@ -113,21 +113,24 @@
         },
         {
             "name": "netsilik/base-test-case",
-            "version": "0.9.0",
+            "version": "0.9.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Netsilik/BaseTestCase.git",
-                "reference": "8dd6ba920c8e4eaab5c1cdb54e98012f864f274d"
+                "reference": "0a42fba47fa6b649019ef0a757d20c892891ca32"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Netsilik/BaseTestCase/zipball/8dd6ba920c8e4eaab5c1cdb54e98012f864f274d",
-                "reference": "8dd6ba920c8e4eaab5c1cdb54e98012f864f274d",
+                "url": "https://api.github.com/repos/Netsilik/BaseTestCase/zipball/0a42fba47fa6b649019ef0a757d20c892891ca32",
+                "reference": "0a42fba47fa6b649019ef0a757d20c892891ca32",
                 "shasum": ""
             },
             "require": {
                 "php": "^7.3",
                 "phpunit/phpunit": "^8.3"
+            },
+            "require-dev": {
+                "netsilik/d": "^1.0"
             },
             "type": "library",
             "autoload": {
@@ -154,7 +157,7 @@
                 "testing",
                 "unit testing"
             ],
-            "time": "2019-08-07T09:34:48+00:00"
+            "time": "2019-08-15T18:25:29+00:00"
         },
         {
             "name": "netsilik/d",

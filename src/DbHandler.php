@@ -415,7 +415,7 @@ class DbHandler implements iDbHandler
 		$queryLength = strlen($query);
 		$parsedParams = ['']; // first element is the token string
 		for ($i = 0; $i < $queryLength; $i++) {
-			switch ($query{$i}) {
+			switch ($query[$i]) {
 				case '\\':
 					$i++;
 					break;
@@ -430,15 +430,15 @@ class DbHandler implements iDbHandler
 					break;
 				case '%':
 					if (!$s && !$d && !$b) { // Not in a quoted string
-						if ($i + 1 < $queryLength && false !== strpos('ifsb', $query{$i + 1})) { // look ahead: can we find a valid parameter type indicator?
-							if ($i + 3 < $queryLength && $query{$i + 2} === ':' && false !== stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query{$i + 3})) { // look ahead: is this a named parameter?
+						if ($i + 1 < $queryLength && false !== strpos('ifsb', $query[$i + 1])) { // look ahead: can we find a valid parameter type indicator?
+							if ($i + 3 < $queryLength && $query[$i + 2] === ':' && false !== stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query[$i + 3])) { // look ahead: is this a named parameter?
 								if ($usesIndexedParameters) {
 									throw new InvalidArgumentException('Mixed indexed and named parameters not supported, please use one or the other');
 								}
 								$usedNamedParameters = true;
 								
 								list($query, $params, $queryLength, $parsedParams) = $this->_preParse_namedParam($i, $query, $params, $queryLength, $parsedParams);
-							} elseif ($i + 2 === $queryLength || false === stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query{$i + 2})) { // look ahead: is this a non-named parameter?
+							} elseif ($i + 2 === $queryLength || false === stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query[$i + 2])) { // look ahead: is this a non-named parameter?
 								if ($usedNamedParameters) {
 									throw new InvalidArgumentException('Mixed named and indexed parameters not supported, please use one or the other');
 								}
@@ -474,8 +474,8 @@ class DbHandler implements iDbHandler
 	private function _preParse_namedParam(int $i, string $query, array $params, int $queryLength, array $parsedParams) : array
 	{
 		$paramName = '';
-		for ($j = $i + 3; false !== stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query{$j}); $j++) {
-			$paramName .= $query{$j};
+		for ($j = $i + 3; false !== stripos('abcdefghijklmnopqrstuvwxyz0123456789_', $query[$j]); $j++) {
+			$paramName .= $query[$j];
 		}
 		
 		if (!isset($params[ $paramName ])) {
@@ -491,12 +491,12 @@ class DbHandler implements iDbHandler
 			
 			array_push($parsedParams, ...$param);
 			
-			$parsedParams[0] .= str_repeat($query{$i + 1}, $elementCount);
+			$parsedParams[0] .= str_repeat($query[$i + 1], $elementCount);
 			
 			$query       = substr_replace($query, implode(',', array_fill(0, $elementCount, '?')), $i, 3 + strlen($paramName));
 			$queryLength += $elementCount * 2 - 3;
 		} else {
-			$parsedParams[0] .= ($query{$i + 1} === 'f' ? 'd' : $query{$i + 1});
+			$parsedParams[0] .= ($query[$i + 1] === 'f' ? 'd' : $query[$i + 1]);
 			$parsedParams[]  = $params[ $paramName ];
 			
 			$query       = substr_replace($query, '?', $i, 3 + strlen($paramName));
@@ -532,12 +532,12 @@ class DbHandler implements iDbHandler
 			
 			array_push($parsedParams, ...$param);
 			
-			$parsedParams[0] .= str_repeat($query{$i + 1}, $elementCount);
+			$parsedParams[0] .= str_repeat($query[$i + 1], $elementCount);
 			
 			$query       = substr_replace($query, implode(',', array_fill(0, $elementCount, '?')), $i, 2);
 			$queryLength += $elementCount * 2 - 3;
 		} else {
-			$parsedParams[0] .= ($query{$i + 1} === 'f' ? 'd' : $query{$i + 1});
+			$parsedParams[0] .= ($query[$i + 1] === 'f' ? 'd' : $query[$i + 1]);
 			$query           = substr_replace($query, '?', $i, 2);
 			$queryLength--;
 			

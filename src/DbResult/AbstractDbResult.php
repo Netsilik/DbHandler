@@ -50,6 +50,9 @@ abstract class AbstractDbResult implements iDbResult {
 	public function fetchField(string $field = null, int $recordNum = 0)
 	{
 		$records = $this->fetch();
+		if (null === $records) {
+			return null;
+		}
 		if (null === $field) {
 			return reset($records[$recordNum]);
 		}
